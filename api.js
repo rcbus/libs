@@ -1,3 +1,17 @@
+export async function api(host,token,data,callback) {
+    const res = await fetch(host,{
+        method: 'post',
+        body: JSON.stringify({
+            token,
+            data
+        })
+    })
+    const returnData = await res.json();
+    if(returnData){
+        callback(returnData)
+    }
+}
+
 export function security(req) {
     if(req.body.length==0){
         return { res: 'error',error: 'No body' }
