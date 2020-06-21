@@ -2,10 +2,10 @@ import mysql from 'serverless-mysql'
 
 const db = mysql({
   config: {
-    host: 'localhost',
-    database: 'routine_app',
-    user: 'cleiton',
-    password: 'ctc363320'
+    host: process.env.dbHost,
+    database: process.env.dbName,
+    user: process.env.dbUser,
+    password: process.env.dbPass
   }
 })
 

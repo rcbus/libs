@@ -1,17 +1,3 @@
-export async function api(host,token,data,callback) {
-    const res = await fetch(host,{
-        method: 'post',
-        body: JSON.stringify({
-            token,
-            data
-        })
-    })
-    const returnData = await res.json();
-    if(returnData){
-        callback(returnData)
-    }
-}
-
 export function setCols(c1,c2,c3,c4,c5){
     var cols = "";
 
