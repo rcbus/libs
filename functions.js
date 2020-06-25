@@ -10,6 +10,13 @@ export function setCols(c1,c2,c3,c4,c5){
     return cols;
 }
 
+export function setSubState(obj,update){
+    Object.keys(update).map(key => (
+      obj[key] = update[key]
+    ))
+    return obj
+}
+
 export function zeroLeft(value,digit){
     var zeroLeft = "";
 

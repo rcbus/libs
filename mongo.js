@@ -23,46 +23,6 @@ export async function con(callback){
     })
 }
 
-export function ins(collection,data,callback){
-    getNextId(collection,(result) => {
-        if(result.error){
-            result.client = false
-            callback({error:result.error})
-        }else{
-            const client = result.client
-            const db = client.db(process.env.dbName).collection(collection)
-            const now = new Date()
-
-            result.error = false
-            data._id = result.newId
-            data.branch = 1
-            data.user = 1
-            data.date = now.getTime(),
-            data.dateModification = now.getTime(),
-            data.historic = '# CRIADO POR (1) ADMIN EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
-
-            db.insertOne(data,(error,result) => {
-                if(error){
-                    console.log('> error: ' + error)
-                    callback({error})
-                }else{
-                    error = false
-                    console.log('> [mongodb]: inserted successfully')
-                    db.find({_id:data._id}).toArray((error,result) => {
-                        if(error){
-                            console.log('> error: ' + error)
-                            callback({error})
-                        }else{
-                            error = false
-                            callback({error,data})
-                        }
-                    })
-                }
-            })
-        }
-    })
-}
-
 export function getNextId(collection,callback){
     con((result) => {
         if(result.error){
@@ -106,9 +66,74 @@ export function getNextId(collection,callback){
             })
         }
     })
- }
+}
 
- export function upd(collection,data,callback){
+export function ins(collection,data,callback){
+    getNextId(collection,(result) => {
+        if(result.error){
+            result.client = false
+            callback({error:result.error})
+        }else{
+            const client = result.client
+            const db = client.db(process.env.dbName).collection(collection)
+            const now = new Date()
+
+            result.error = false
+            data._id = result.newId
+            data.branch = 1
+            data.user = 1
+            data.date = now.getTime(),
+            data.dateModification = now.getTime(),
+            data.historic = '# CRIADO POR (1) ADMIN EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
+
+            db.insertOne(data,(error,result) => {
+                if(error){
+                    console.log('> error: ' + error)
+                    callback({error})
+                }else{
+                    error = false
+                    console.log('> [mongodb]: inserted successfully')
+                    db.find({_id:data._id}).toArray((error,result) => {
+                        if(error){
+                            console.log('> error: ' + error)
+                            callback({error})
+                        }else{
+                            error = false
+                            callback({error,data:result})
+                        }
+                    })
+                }
+            })
+        }
+    })
+}
+
+export function sel(collection,data,projection,callback){
+    con((result) => {
+        if(result.error){
+            result.client = false
+            callback({error:result.error})
+        }else{
+            const client = result.client
+            const db = client.db(process.env.dbName).collection(collection)
+
+            result.error = false
+
+            db.find(data,projection).toArray((error,result) => {
+                if(error){
+                    console.log('> error: ' + error)
+                    callback({error})
+                }else{
+                    error = false
+                    console.log('> [mongodb]: successfully selected')
+                    callback({error,data:result})
+                }
+            })
+        }
+    })
+}
+
+export function upd(collection,data,callback){
     if(typeof data._id === 'undefined'){
         console.log('> error: _id undefined')
         callback({error:'_id undefined'})
