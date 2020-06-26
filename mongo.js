@@ -11,7 +11,7 @@ import { MongoClient } from 'mongodb'
 import { zeroLeft } from '../libs/functions'
 
 export async function con(callback){
-    MongoClient.connect('mongodb://' + process.env.dbUser + ':' + process.env.dbPass + '@' + process.env.dbHost + ':' + process.env.dbPort + '/' + process.env.dbName, (error, client) => {
+    MongoClient.connect('mongodb://' + process.env.dbUser + ':' + process.env.dbPass + '@' + process.env.dbHost + ':' + process.env.dbPort + '/' + process.env.dbName,{ useUnifiedTopology: true }, (error, client) => {
         if(error){
             client = false
             console.log('> error: ' + error)
