@@ -108,7 +108,9 @@ export function ins(collection,data,callback){
     })
 }
 
-export function sel(collection,data,projection,callback){
+export function sel(collection,data,projection,callback,sort,limit){
+    if(typeof limit === 'undefined') { limit = 100 }
+    if(typeof sort === 'undefined') { sort = {} }
     con((result) => {
         if(result.error){
             result.client = false
@@ -119,7 +121,7 @@ export function sel(collection,data,projection,callback){
 
             result.error = false
 
-            db.find(data,projection).toArray((error,result) => {
+            db.find(data,projection).limit(limit).sort(sort).toArray((error,result) => {
                 if(error){
                     console.log('> error: ' + error)
                     callback({error})
