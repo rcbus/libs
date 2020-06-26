@@ -1,4 +1,4 @@
-export function setCols(c1,c2,c3,c4,c5){
+export function setCols(c1,c2,c3,c4,c5,mb){
     var cols = "";
 
     if(typeof c1 !== 'undefined') cols = cols + " col-" + c1
@@ -6,6 +6,15 @@ export function setCols(c1,c2,c3,c4,c5){
     if(typeof c3 !== 'undefined') cols = cols + " col-md-" + c3
     if(typeof c4 !== 'undefined') cols = cols + " col-lg-" + c4
     if(typeof c5 !== 'undefined') cols = cols + " col-xl-" + c5
+    if(typeof mb !== 'undefined'){
+        if(mb==1){
+            cols = cols + " mb-2 mb-sm-0"
+        }else if(mb==2){
+            cols = cols + " mb-2 mb-md-0"
+        }else{
+            cols = cols + " mb-2 mb-sm-0"
+        }
+    }
     
     return cols;
 }
