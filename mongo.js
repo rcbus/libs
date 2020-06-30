@@ -8,7 +8,7 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft } from '../libs/functions'
+import { zeroLeft,getSession } from '../libs/functions'
 
 export async function con(callback){
     MongoClient.connect('mongodb://' + process.env.dbUser + ':' + process.env.dbPass + '@' + process.env.dbHost + ':' + process.env.dbPort + '/' + process.env.dbName,{ useUnifiedTopology: true }, (error, client) => {
@@ -80,11 +80,13 @@ export function ins(collection,data,callback){
 
             result.error = false
             data._id = result.newId
-            data.branch = 1
-            data.user = 1
+            data.branch = (typeof data.branch !== 'undefined' ? data.branch : 1)
+            data.branchName = (typeof data.branchName !== 'undefined' ? data.branchName : '')
+            data.user = (typeof data.user !== 'undefined' ? data.user : 1)
+            data.userName = (typeof data.userName !== 'undefined' ? ("(" + data.user + ") " + data.userName) : '')
             data.date = now.getTime(),
             data.dateModification = now.getTime(),
-            data.historic = '# CRIADO POR (1) ADMIN EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
+            data.historic = '# CRIADO POR ' + data.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
 
             db.insertOne(data,(error,result) => {
                 if(error){
