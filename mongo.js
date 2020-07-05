@@ -23,7 +23,11 @@ export async function con(callback){
     })
 }
 
-export function getNextId(collection,callback){
+export function getNextId(collection,callback,add){
+    if(typeof add === 'undefined'){
+        add = 1
+    }
+
     con((result) => {
         if(result.error){
             result.client = false
@@ -34,32 +38,32 @@ export function getNextId(collection,callback){
             const db = client.db(process.env.dbName).collection('counters')
             db.find({_id:collection}).count().then(count => {
                 if(count==0){
-                    db.insertOne({_id:collection,next:1},(error,result) => {
+                    db.insertOne({_id:collection,next:0},(error,result) => {
                         if(error){
                             console.log('> error: ' + error)
                             callback({error})
                         }else{
-                            db.findOneAndUpdate({_id:collection},{$inc:{next:1}},(error,result) => {
+                            db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
                                 if(error){
                                     console.log('> error: ' + error)
                                     callback({error})
                                 }else{
                                     error = false
-                                    console.log('> [mongodb]: *newId:' + result.value.next)
-                                    callback({error,client,newId:result.value.next})
+                                    console.log('> [mongodb]: *newId:' + (result.value.next + add))
+                                    callback({error,client,newId:(result.value.next + add)})
                                 }
                             })
                         }
                     })
                 }else{
-                    db.findOneAndUpdate({_id:collection},{$inc:{next:1}},(error,result) => {
+                    db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
                         if(error){
                             console.log('> error: ' + error)
                             callback({error})
                         }else{
                             error = false
-                            console.log('> [mongodb]: newId:' + result.value.next)
-                            callback({error,client,newId:result.value.next})
+                            console.log('> [mongodb]: newId:' + (result.value.next + add))
+                            callback({error,client,newId:(result.value.next + add)})
                         }
                     })
                 }
@@ -110,6 +114,52 @@ export function ins(collection,data,callback){
     })
 }
 
+export function insArray(collection,data,callback){
+    if(Array.isArray(data)===false){
+        result.client = false
+        console.log('> error: data is not array')
+        callback({error:'data is not array'})
+    }else{
+        getNextId(collection,(result) => {
+            if(result.error){
+                result.client = false
+                callback({error:result.error})
+            }else{
+                const client = result.client
+                const db = client.db(process.env.dbName).collection(collection)
+                const now = new Date()
+
+                result.error = false
+
+                var startId = result.newId - data.length
+
+                data.map(v => {
+                    v._id = startId
+                    v.branch = (typeof v.branch !== 'undefined' ? v.branch : 1)
+                    v.branchName = (typeof v.branchName !== 'undefined' ? v.branchName : '')
+                    v.user = (typeof v.user !== 'undefined' ? v.user : 1)
+                    v.userName = (typeof v.userName !== 'undefined' ? ("(" + v.user + ") " + v.userName) : '')
+                    v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
+                    v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
+                    v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
+                    startId = startId + 1
+                })
+
+                db.insertMany(data,(error,result) => {
+                    if(error){
+                        console.log('> error: ' + error)
+                        callback({error})
+                    }else{
+                        error = false
+                        console.log('> [mongodb]: inserted array successfully')
+                        callback({error,data:result})
+                    }
+                })
+            }
+        },data.length)
+    }
+}
+
 export function sel(collection,data,projection,callback,sort,limit){
     if(typeof limit === 'undefined') { limit = 100 }
     if(typeof sort === 'undefined') { sort = {} }
@@ -122,8 +172,7 @@ export function sel(collection,data,projection,callback,sort,limit){
             const db = client.db(process.env.dbName).collection(collection)
 
             result.error = false
-
-            db.find(data,projection).limit(limit).sort(sort).toArray((error,result) => {
+            db.find(data,projection).limit(limit).sort(sort).collation({locale: "en_US", numericOrdering: true}).toArray((error,result) => {
                 if(error){
                     console.log('> error: ' + error)
                     callback({error})
