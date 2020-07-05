@@ -1,7 +1,61 @@
+export function decimal(number,precision,usa){
+    var numberTemp = number
+    
+    if(typeof numberTemp === 'string'){
+        console.log('1: ' + numberTemp)
+        if(numberTemp.indexOf(',')!=-1){
+            numberTemp = numberTemp.replace('.','')
+            numberTemp = numberTemp.replace(',','.')
+        }
+        numberTemp = parseFloat(numberTemp)
+        console.log('2: ' + numberTemp)
+    }
+
+    numberTemp = numberTemp * 1
+    console.log('3: ' + numberTemp)
+    if(typeof usa === 'undefined'){
+        numberTemp = numberTemp.toFixed(precision)
+        numberTemp = numberTemp.replace('.',',')
+    }
+    console.log('4: ' + numberTemp) 
+    return numberTemp
+}
+
+export function fromTo(map,data){
+    var newData = []
+    data.map(v => {
+        var newDataTemp = {}
+        Object.keys(v).map(k => {
+            if(typeof map[k] !== 'undefined'){
+                if(map[k].value.indexOf('date')==-1){
+                    if(map[k].value!='_id'){
+                        if(map[k].type=='text'){
+                            newDataTemp[map[k].value] = v[k]
+                        }else{
+                            newDataTemp[map[k].value] = (v[k] * 1)
+                        }
+                    }else{
+                        newDataTemp[map[k].value] = (v[k] * 1)
+                        newDataTemp['_idOld'] = (v[k] * 1)
+                    }
+                }else{
+                    if(v[k].length>=13){
+                        newDataTemp[map[k].value] = (v[k] * 1)
+                    }else{
+                        newDataTemp[map[k].value] = (v[k].toString() + "000") * 1 
+                    }
+                }
+            }
+        })
+        newData.push(newDataTemp)
+    })
+    return newData
+}
+
 export function getSession(key,pagename){
     try{
         if(typeof pagename === 'undefined'){
-            pagename = 'app'
+            pagename = process.env.tokenApi
         }
 
         if(localStorage.getItem(pagename + "-" + key).length==0){
@@ -20,6 +74,10 @@ export function getSession(key,pagename){
     }catch(e){
         return false
     }
+}
+
+export function keyboardEvent(callback){
+    window.addEventListener("keydown",(e) => callback(e.key))
 }
 
 export function setCols(c1,c2,c3,c4,c5,mb){
@@ -46,7 +104,7 @@ export function setCols(c1,c2,c3,c4,c5,mb){
 export function setSession(key,data,pagename,lifetime){
     try{
         if(typeof pagename === 'undefined'){
-            pagename = 'app'
+            pagename = process.env.tokenApi
         }
         if(typeof lifetime !== 'undefined'){
             const now = new Date()
@@ -77,6 +135,22 @@ export function sign(obj){
     obj.branch = getSession("userData").branch
     obj.branchName = getSession("userData").branchName
     return obj
+}
+
+export function strlen(string){
+    if(typeof string === 'undefined'){
+        return 0
+    }else{
+        return string.length
+    }
+}
+
+export function strupper(string){
+    if(typeof string === 'undefined'){
+        return ''
+    }else{
+        return string.toUpperCase()
+    }
 }
 
 export function unSetSession(key,pagename){
