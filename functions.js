@@ -173,8 +173,10 @@ export function unSetSession(key,pagename){
 export function zeroLeft(value,digit){
     var zeroLeft = "";
 
-    for(var i = 0;i < (digit - value.toString().length);i++){
-        zeroLeft = "0" + zeroLeft;
+    if(typeof value !== 'undefined'){
+        for(var i = 0;i < (digit - value.toString().length);i++){
+            zeroLeft = "0" + zeroLeft;
+        }
     }
 
     zeroLeft = zeroLeft + value;
