@@ -8,7 +8,11 @@ export async function api(host,token,data,callback) {
     })
     const returnData = await res.json();
     if(returnData){
-        callback(returnData)
+        if(callback){
+            callback(returnData)
+        }else{
+            return true
+        }
     }
 }
 

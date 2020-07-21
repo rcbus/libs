@@ -1,3 +1,25 @@
+export function clearString(str,withoutSpace,withoutDot){
+    var newStr = str.normalize('NFD')
+    newStr = newStr.replace(/[\u0300-\u036f]/g, '')
+    newStr = newStr.replace(/\s/g, 'SpAcEsPaCe')
+    newStr = newStr.replace(/\./g, 'DoTdOt')
+    newStr = newStr.replace(/([^\w]+|\s+)/g, '')
+
+    if(typeof withoutSpace !== 'undefined'){
+        newStr = newStr.replace(/SpAcEsPaCe/g, '_')
+    }else{
+        newStr = newStr.replace(/SpAcEsPaCe/g, ' ')
+    }
+
+    if(typeof withoutDot !== 'undefined'){
+        newStr = newStr.replace(/DoTdOt/g, '')
+    }else{
+        newStr = newStr.replace(/DoTdOt/g, '.')
+    }
+
+    return newStr
+}
+
 export function decimal(number,precision,usa){
     var numberTemp = number
     
@@ -27,22 +49,24 @@ export function fromTo(map,data){
         var newDataTemp = {}
         Object.keys(v).map(k => {
             if(typeof map[k] !== 'undefined'){
-                if(map[k].value.indexOf('date')==-1){
-                    if(map[k].value!='_id'){
-                        if(map[k].type=='text'){
-                            newDataTemp[map[k].value] = v[k]
+                if(typeof map[k].value !== 'undefined'){
+                    if(map[k].value.indexOf('date')==-1){
+                        if(map[k].value!='_id'){
+                            if(map[k].type=='text'){
+                                newDataTemp[map[k].value] = v[k]
+                            }else{
+                                newDataTemp[map[k].value] = (v[k] * 1)
+                            }
                         }else{
                             newDataTemp[map[k].value] = (v[k] * 1)
+                            newDataTemp['_idOld'] = (v[k] * 1)
                         }
                     }else{
-                        newDataTemp[map[k].value] = (v[k] * 1)
-                        newDataTemp['_idOld'] = (v[k] * 1)
-                    }
-                }else{
-                    if(v[k].length>=13){
-                        newDataTemp[map[k].value] = (v[k] * 1)
-                    }else{
-                        newDataTemp[map[k].value] = (v[k].toString() + "000") * 1 
+                        if(v[k].length>=13){
+                            newDataTemp[map[k].value] = (v[k] * 1)
+                        }else{
+                            newDataTemp[map[k].value] = (v[k].toString() + "000") * 1 
+                        }
                     }
                 }
             }
@@ -141,7 +165,15 @@ export function strlen(string){
     if(typeof string === 'undefined'){
         return 0
     }else{
-        return string.length
+        return string.toString().length
+    }
+}
+
+export function strlower(string){
+    if(typeof string === 'undefined'){
+        return ''
+    }else{
+        return string.toLowerCase()
     }
 }
 
