@@ -23,7 +23,7 @@ export async function con(callback){
     })
 }
 
-export function getNextId(collection,callback,add){
+export function getNextId(collection,callback,add,randomId){
     if(typeof add === 'undefined'){
         add = 1
     }
@@ -36,43 +36,49 @@ export function getNextId(collection,callback,add){
             result.error = false
             const client = result.client
             const db = client.db(process.env.dbName).collection('counters')
-            db.find({_id:collection}).count().then(count => {
-                if(count==0){
-                    db.insertOne({_id:collection,next:0},(error,result) => {
-                        if(error){
-                            console.log('> error: ' + error)
-                            callback({error})
-                        }else{
-                            db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
-                                if(error){
-                                    console.log('> error: ' + error)
-                                    callback({error})
-                                }else{
-                                    error = false
-                                    console.log('> [mongodb]: *newId:' + (result.value.next + add))
-                                    callback({error,client,newId:(result.value.next + add)})
-                                }
-                            })
-                        }
-                    })
-                }else{
-                    db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
-                        if(error){
-                            console.log('> error: ' + error)
-                            callback({error})
-                        }else{
-                            error = false
-                            console.log('> [mongodb]: newId:' + (result.value.next + add))
-                            callback({error,client,newId:(result.value.next + add)})
-                        }
-                    })
-                }
-            })
+
+            if(typeof randomId === 'undefined'){
+                db.find({_id:collection}).count().then(count => {
+                    if(count==0){
+                        db.insertOne({_id:collection,next:0},(error,result) => {
+                            if(error){
+                                console.log('> error: ' + error)
+                                callback({error})
+                            }else{
+                                db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
+                                    if(error){
+                                        console.log('> error: ' + error)
+                                        callback({error})
+                                    }else{
+                                        error = false
+                                        console.log('> [mongodb]: *newId:' + (result.value.next + add))
+                                        callback({error,client,newId:(result.value.next + add)})
+                                    }
+                                })
+                            }
+                        })
+                    }else{
+                        db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
+                            if(error){
+                                console.log('> error: ' + error)
+                                callback({error})
+                            }else{
+                                error = false
+                                console.log('> [mongodb]: newId:' + (result.value.next + add))
+                                callback({error,client,newId:(result.value.next + add)})
+                            }
+                        })
+                    }
+                })
+            }else{
+                console.log('> [mongodb]: newId:random')
+                callback({error:false,client,newId:'random'})
+            }
         }
     })
 }
 
-export function ins(collection,data,callback){
+export function ins(collection,data,callback,randomId){
     getNextId(collection,(result) => {
         if(result.error){
             result.client = false
@@ -83,7 +89,9 @@ export function ins(collection,data,callback){
             const now = new Date()
 
             result.error = false
-            data._id = result.newId
+            if(result.newId!='random'){
+                data._id = result.newId
+            }
             data.branch = (typeof data.branch !== 'undefined' ? data.branch : 1)
             data.branchName = (typeof data.branchName !== 'undefined' ? data.branchName : '')
             data.user = (typeof data.user !== 'undefined' ? data.user : 1)
@@ -99,7 +107,7 @@ export function ins(collection,data,callback){
                 }else{
                     error = false
                     console.log('> [mongodb]: inserted successfully')
-                    db.find({_id:data._id}).toArray((error,result) => {
+                    db.find(data).limit(1).sort({date:-1}).toArray((error,result) => {
                         if(error){
                             console.log('> error: ' + error)
                             callback({error})
@@ -111,7 +119,7 @@ export function ins(collection,data,callback){
                 }
             })
         }
-    })
+    },undefined,randomId)
 }
 
 export function insArray(collection,data,callback){
@@ -186,7 +194,7 @@ export function sel(collection,data,projection,callback,sort,limit){
     })
 }
 
-export function upd(collection,data,callback){
+export function upd(collection,data,callback,withoutHistoric){
     if(typeof data._id === 'undefined'){
         console.log('> error: _id undefined')
         callback({error:'_id undefined'})
@@ -233,6 +241,10 @@ export function upd(collection,data,callback){
                             modified = ' - NENHUMA ALTERAÇÃO'
                         }else{
                             modified = ' - ANTES DAS ALTERAÇÕES: ' + modified
+                        }
+
+                        if(typeof withoutHistoric !== 'undefined'){
+                            modified = "";
                         }
 
                         data.dateModification = now.getTime(),
