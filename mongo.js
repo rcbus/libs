@@ -40,7 +40,7 @@ export function getNextId(collection,callback,add,randomId){
             if(typeof randomId === 'undefined'){
                 db.find({_id:collection}).count().then(count => {
                     if(count==0){
-                        db.insertOne({_id:collection,next:0},(error,result) => {
+                        db.insertOne({_id:collection,next:1},(error,result) => {
                             if(error){
                                 console.log('> error: ' + error)
                                 callback({error})
