@@ -8,7 +8,8 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft,getSession } from '../libs/functions'
+import { zeroLeft,getSession,strlen } from '../libs/functions'
+import { result } from '../libs/api'
 
 export async function con(callback){
     MongoClient.connect('mongodb://' + process.env.dbUser + ':' + process.env.dbPass + '@' + process.env.dbHost + ':' + process.env.dbPort + '/' + process.env.dbName,{ useUnifiedTopology: true }, (error, client) => {
@@ -20,6 +21,35 @@ export async function con(callback){
             console.log('> [mongodb]: connected')
         }
         callback({error,client})
+    })
+}
+
+export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data){        
+    sel(collection,verify,{},(resultMongo) => {
+        if(resultMongo.error){
+            result(200,{res:'error',error:resultMongo.error},res,resolve)
+        }else if(strlen(resultMongo.data)>0 && (data.status==1 || strlen(data._id)==0)){
+            result(200,{res:'error',error:msgVerify},res,resolve)
+        }else{
+            if(strlen(data._id)==0){
+                data.status = 1
+                ins(collection,data,(resultMongo) => {
+                    if(resultMongo.error){
+                        result(200,{res:'error',error:resultMongo.error},res,resolve)
+                    }else{
+                        result(200,{ res: 'success',data:resultMongo.data },res,resolve)
+                    }
+                })
+            }else{
+                upd(collection,data,(resultMongo) => {
+                    if(resultMongo.error){
+                        result(200,{res:'error',error:resultMongo.error},res,resolve)
+                    }else{
+                        result(200,{ res:'success',data:resultMongo.data },res,resolve)
+                    }
+                })
+            }
+        }
     })
 }
 
@@ -40,7 +70,7 @@ export function getNextId(collection,callback,add,randomId){
             if(typeof randomId === 'undefined'){
                 db.find({_id:collection}).count().then(count => {
                     if(count==0){
-                        db.insertOne({_id:collection,next:1},(error,result) => {
+                        db.insertOne({_id:collection,next:0},(error,result) => {
                             if(error){
                                 console.log('> error: ' + error)
                                 callback({error})
@@ -139,7 +169,7 @@ export function insArray(collection,data,callback){
 
                 result.error = false
 
-                var startId = result.newId - data.length
+                var startId = result.newId - (data.length - 1)
 
                 data.map(v => {
                     v._id = startId
