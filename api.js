@@ -1,3 +1,6 @@
+import { strlen } from '../libs/functions'
+/*import { sel,upd,ins } from './mongo'*/
+
 export async function api(host,token,data,callback) {
     const res = await fetch(host,{
         method: 'post',
@@ -14,6 +17,12 @@ export async function api(host,token,data,callback) {
             return true
         }
     }
+}
+
+export function result(code,json,res,resolve){
+    res.statusCode = code
+    res.json(json)
+    resolve()
 }
 
 export function security(req) {
