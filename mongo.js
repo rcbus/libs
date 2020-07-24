@@ -8,7 +8,7 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft,getSession,strlen } from '../libs/functions'
+import { zeroLeft,getSession,strlen,setSubState } from '../libs/functions'
 import { result } from '../libs/api'
 
 export async function con(callback){
@@ -24,33 +24,64 @@ export async function con(callback){
     })
 }
 
-export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data){        
-    sel(collection,verify,{},(resultMongo) => {
-        if(resultMongo.error){
-            result(200,{res:'error',error:resultMongo.error},res,resolve)
-        }else if(strlen(resultMongo.data)>0 && (data.status==1 || strlen(data._id)==0)){
-            result(200,{res:'error',error:msgVerify},res,resolve)
-        }else{
-            if(strlen(data._id)==0){
-                data.status = 1
-                ins(collection,data,(resultMongo) => {
-                    if(resultMongo.error){
-                        result(200,{res:'error',error:resultMongo.error},res,resolve)
-                    }else{
-                        result(200,{ res: 'success',data:resultMongo.data },res,resolve)
-                    }
-                })
+export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,sort,limit){  
+    if(verifyCrudad(data)=='read'){
+        if(strlen(data.search)>0 && strlen(data.config)>0){
+            var searchTemp = []
+            Object.values(data.config).map(v => {
+                if(v.searchable=='true'){
+                    var regex = new RegExp(data.search,'i');
+                    searchTemp.push({[v.column]:{$regex:regex}})
+                }
+            })
+            data.condition = setSubState(data.condition,{$or:searchTemp})
+        }
+
+        sel(collection,data.condition,{},(resultMongo) => {
+            if(resultMongo.error){
+                result(200,{res:'error',error:resultMongo.error},res,resolve)
             }else{
-                upd(collection,data,(resultMongo) => {
+                var resultData = {
+                    data:resultMongo.data
+                }
+                sel('config',{collection},{branch:false,user:false,date:false,dateModification:false,historic:false},(resultMongo) => {
                     if(resultMongo.error){
                         result(200,{res:'error',error:resultMongo.error},res,resolve)
                     }else{
-                        result(200,{ res:'success',data:resultMongo.data },res,resolve)
+                        resultData.config = resultMongo.data
+                        result(200,{ res: 'success',data: resultData },res,resolve)
                     }
                 })
             }
-        }
-    })
+        },sort,limit)
+    }else{   
+        sel(collection,verify,{},(resultMongo) => {
+            if(resultMongo.error){
+                result(200,{res:'error',error:resultMongo.error},res,resolve)
+            }else if(strlen(resultMongo.data)>0 && (data.status==1 || strlen(data._id)==0)){
+                result(200,{res:'error',error:msgVerify},res,resolve)
+            }else{
+                if(strlen(data._id)==0){
+                    data.status = 1
+                    ins(collection,data,(resultMongo) => {
+                        if(resultMongo.error){
+                            result(200,{res:'error',error:resultMongo.error},res,resolve)
+                        }else{
+                            result(200,{ res: 'success',data:resultMongo.data },res,resolve)
+                        }
+                    })
+                }else{
+                    upd(collection,data,(resultMongo) => {
+                        if(resultMongo.error){
+                            result(200,{res:'error',error:resultMongo.error},res,resolve)
+                        }else{
+                            result(200,{ res:'success',data:resultMongo.data },res,resolve)
+                        }
+                    })
+                }
+            }
+        })
+    }
 }
 
 export function getNextId(collection,callback,add,randomId){
@@ -294,5 +325,15 @@ export function upd(collection,data,callback,withoutHistoric){
                 })
             }
         })
+    }
+}
+
+export function verifyCrudad(data){
+    if(typeof data.condition !== 'undefined' && typeof data.config !== 'undefined' && typeof data.search !== 'undefined'){
+        return 'read'
+    }else if(strlen(data._id)==0){
+        return 'create'
+    }else{
+        return 'update'
     }
 }
