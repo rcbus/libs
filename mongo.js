@@ -8,7 +8,7 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft,getSession,strlen,setSubState } from '../libs/functions'
+import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex } from '../libs/functions'
 import { result } from '../libs/api'
 
 export async function con(callback){
@@ -30,7 +30,7 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
             var searchTemp = []
             Object.values(data.config).map(v => {
                 if(v.searchable=='true'){
-                    var regex = new RegExp(data.search,'i');
+                    var regex = new RegExp(diacriticSensitiveRegex(data.search),'i');
                     searchTemp.push({[v.column]:{$regex:regex}})
                 }
             })
@@ -285,16 +285,18 @@ export function upd(collection,data,callback,withoutHistoric){
 
                         var modified = ""
                         Object.keys(data).map((key) => {
-                            if(typeof dataBefore[key] === 'undefined'){
-                                if(modified.length>0){
-                                    modified = modified + ','
+                            if(key!='historic' && key!='dateModification'){
+                                if(typeof dataBefore[key] === 'undefined'){
+                                    if(modified.length>0){
+                                        modified = modified + ','
+                                    }
+                                    modified = modified + '*' + key + '=[] ' 
+                                }else if(dataBefore[key]!=data[key]){
+                                    if(modified.length>0){
+                                        modified = modified + ','
+                                    }
+                                    modified = modified + key + '=[' + dataBefore[key] + '] ' 
                                 }
-                                modified = modified + '*' + key + '=[] ' 
-                            }else if(dataBefore[key]!=data[key]){
-                                if(modified.length>0){
-                                    modified = modified + ','
-                                }
-                                modified = modified + key + '=[' + dataBefore[key] + '] ' 
                             }
                         })
 

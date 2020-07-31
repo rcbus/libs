@@ -1,3 +1,15 @@
+export function clearNumber(number){
+    if(number !== undefined){
+        number = number.toString()
+        if(strlen(number)>0){
+            number = number.replace(/[^0-9]/g,'');
+        }
+        return number
+    }else{
+        return number
+    }
+}
+
 export function clearString(str,withoutSpace,withoutDot){
     var newStr = str.normalize('NFD')
     newStr = newStr.replace(/[\u0300-\u036f]/g, '')
@@ -18,6 +30,14 @@ export function clearString(str,withoutSpace,withoutDot){
     }
 
     return newStr
+}
+
+export function count(obj){
+    if(typeof obj === 'undefined'){
+        return 0
+    }else{
+        return obj.length
+    }
 }
 
 export function decimal(number,precision,usa){
@@ -43,6 +63,28 @@ export function decimal(number,precision,usa){
     return numberTemp
 }
 
+export function diacriticSensitiveRegex(string = '') {
+    return string.replace(/a/g, '[a,á,à,ä]')
+       .replace(/e/g, '[e,é,ë]')
+       .replace(/i/g, '[i,í,ï]')
+       .replace(/o/g, '[o,ó,ö,ò]')
+       .replace(/u/g, '[u,ü,ú,ù]');
+}
+
+export function formatTimestamp(date){
+    date = date.replace(/T/g,'-')
+    date = date.replace(/:/g,'-')
+    date = date.split('-')
+    var year = (date[0] !== undefined ? date[0] : 0)
+    var month = (date[1] !== undefined ? (date[1] - 1) : 0)
+    var day = (date[2] !== undefined ? date[2] : 0)
+    var hours = (date[3] !== undefined ? date[3] : 0)
+    var minutes = (date[4] !== undefined ? date[4] : 0)
+    var seconds = (date[5] !== undefined ? date[5] : 0)
+    var timestamp = new Date(year, month, day, hours, minutes, seconds, 0).getTime()
+    return timestamp
+}
+
 export function fromTo(map,data){
     var newData = []
     data.map(v => {
@@ -56,6 +98,17 @@ export function fromTo(map,data){
                                 newDataTemp[map[k].value] = v[k]
                             }else{
                                 newDataTemp[map[k].value] = (v[k] * 1)
+                            }
+                            if(map[k].join !== undefined){
+                                map[k].join.map(join => {
+                                    if(count(join.data[v[k]])>0){
+                                        if(join.map.type=='text'){
+                                            newDataTemp[join.map.value] = join.data[v[k]]
+                                        }else{
+                                            newDataTemp[join.map.value] = (join.data[v[k]] * 1)
+                                        }
+                                    }
+                                })
                             }
                         }else{
                             newDataTemp[map[k].value] = (v[k] * 1)
@@ -198,6 +251,73 @@ export function unSetSession(key,pagename){
             localStorage.removeItem(pagename + "-" + key)
         }
     }catch(e){
+        return false
+    }
+}
+
+export function verifyCpfCnpj(cpfCnpj){
+    cpfCnpj = clearNumber(cpfCnpj)
+    if(strlen(cpfCnpj)==11){
+        if(cpfCnpj.match(/(\d)\1{10}/)){
+            return false
+        }
+
+        for(var t = 9;t < 11;t++){
+            var d = 0
+            for(var c = 0;c < t;c++){
+                d += parseInt(cpfCnpj.substr(c,1)) * ((t + 1) - c)
+            }
+            d = ((10 * d) % 11) % 10
+            if(cpfCnpj.substr(c,1) != d){
+                return false
+            }
+        }
+        
+        return true
+    }else if(strlen(cpfCnpj)==14){
+        var soma = 0;
+        
+        soma += (parseInt(cpfCnpj.substr(0,1)) * 5);
+        soma += (parseInt(cpfCnpj.substr(1,1)) * 4);
+        soma += (parseInt(cpfCnpj.substr(2,1)) * 3);
+        soma += (parseInt(cpfCnpj.substr(3,1)) * 2);
+        soma += (parseInt(cpfCnpj.substr(4,1)) * 9);
+        soma += (parseInt(cpfCnpj.substr(5,1)) * 8);
+        soma += (parseInt(cpfCnpj.substr(6,1)) * 7);
+        soma += (parseInt(cpfCnpj.substr(7,1)) * 6);
+        soma += (parseInt(cpfCnpj.substr(8,1)) * 5);
+        soma += (parseInt(cpfCnpj.substr(9,1)) * 4);
+        soma += (parseInt(cpfCnpj.substr(10,1)) * 3);
+        soma += (parseInt(cpfCnpj.substr(11,1)) * 2);
+        
+        var d1 = soma % 11;
+        var d1 = d1 < 2 ? 0 : 11 - d1;
+        
+        soma = 0;
+        soma += (parseInt(cpfCnpj.substr(0,1)) * 6);
+        soma += (parseInt(cpfCnpj.substr(1,1)) * 5);
+        soma += (parseInt(cpfCnpj.substr(2,1)) * 4);
+        soma += (parseInt(cpfCnpj.substr(3,1)) * 3);
+        soma += (parseInt(cpfCnpj.substr(4,1)) * 2);
+        soma += (parseInt(cpfCnpj.substr(5,1)) * 9);
+        soma += (parseInt(cpfCnpj.substr(6,1)) * 8);
+        soma += (parseInt(cpfCnpj.substr(7,1)) * 7);
+        soma += (parseInt(cpfCnpj.substr(8,1)) * 6);
+        soma += (parseInt(cpfCnpj.substr(9,1)) * 5);
+        soma += (parseInt(cpfCnpj.substr(10,1)) * 4);
+        soma += (parseInt(cpfCnpj.substr(11,1)) * 3);
+        soma += (parseInt(cpfCnpj.substr(12,1)) * 2);
+        
+        
+        var d2 = soma % 11;
+        d2 = d2 < 2 ? 0 : 11 - d2;
+        
+        if(parseInt(cpfCnpj.substr(12,1)) == d1 && parseInt(cpfCnpj.substr(13,1)) == d2){
+            return true;
+        }else{
+            return false;
+        }
+    }else{
         return false
     }
 }
