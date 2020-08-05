@@ -8,7 +8,7 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex } from '../libs/functions'
+import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex,count } from '../libs/functions'
 import { result } from '../libs/api'
 
 export async function con(callback){
@@ -24,7 +24,7 @@ export async function con(callback){
     })
 }
 
-export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,sort,limit){  
+export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,sort,limit,processing){  
     if(verifyCrudad(data)=='read'){
         if(strlen(data.search)>0 && strlen(data.config)>0){
             var searchTemp = []
@@ -41,6 +41,7 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
             if(resultMongo.error){
                 result(200,{res:'error',error:resultMongo.error},res,resolve)
             }else{
+                resultMongo.data = exeProcessing(processing,resultMongo.data)
                 var resultData = {
                     data:resultMongo.data
                 }
@@ -67,6 +68,7 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
                         if(resultMongo.error){
                             result(200,{res:'error',error:resultMongo.error},res,resolve)
                         }else{
+                            resultMongo.data = exeProcessing(processing,resultMongo.data)
                             result(200,{ res: 'success',data:resultMongo.data },res,resolve)
                         }
                     })
@@ -75,6 +77,7 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
                         if(resultMongo.error){
                             result(200,{res:'error',error:resultMongo.error},res,resolve)
                         }else{
+                            resultMongo.data = exeProcessing(processing,resultMongo.data)
                             result(200,{ res:'success',data:resultMongo.data },res,resolve)
                         }
                     })
@@ -229,9 +232,28 @@ export function insArray(collection,data,callback){
     }
 }
 
+export function exeProcessing(processing,data){
+    if(processing !== undefined){
+        if(count(processing)>0){
+            processing.map(p => {
+                if(p.column !== undefined){
+                    if(p.callback !== undefined){
+                        Object.keys(data).map(k => {
+                            if(data[k][p.column] !== undefined){
+                                data[k][p.column] = p.callback(data[k][p.column])
+                            }
+                        })
+                    }
+                }
+            })
+        }
+    }
+    return data
+}
+
 export function sel(collection,data,projection,callback,sort,limit){
-    if(typeof limit === 'undefined') { limit = 100 }
-    if(typeof sort === 'undefined') { sort = {} }
+    if(typeof limit === 'undefined'){ limit = 100 }
+    if(typeof sort === 'undefined'){ sort = {} }
     con((result) => {
         if(result.error){
             result.client = false

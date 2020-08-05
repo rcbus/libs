@@ -1,39 +1,57 @@
 export function clearNumber(number){
-    if(number !== undefined){
+    if(verifyVariable(number)){
         number = number.toString()
         if(strlen(number)>0){
             number = number.replace(/[^0-9]/g,'');
         }
         return number
     }else{
-        return number
+        return ''
     }
 }
 
-export function clearString(str,withoutSpace,withoutDot){
-    var newStr = str.normalize('NFD')
-    newStr = newStr.replace(/[\u0300-\u036f]/g, '')
-    newStr = newStr.replace(/\s/g, 'SpAcEsPaCe')
-    newStr = newStr.replace(/\./g, 'DoTdOt')
-    newStr = newStr.replace(/([^\w]+|\s+)/g, '')
+export function clearString(str,withoutSpace,withoutDot,withAtSign,withComma){
+    if(verifyVariable(str)){
+        var newStr = str.normalize('NFD')
+        newStr = newStr.replace(/@/g, 'AtSiGnAtSiGn')
+        newStr = newStr.replace(/,/g, 'CoMmAcOmMa')
+        newStr = newStr.replace(/[\u0300-\u036f]/g, '')
+        newStr = newStr.replace(/\s/g, 'SpAcEsPaCe')
+        newStr = newStr.replace(/\./g, 'DoTdOt')
+        newStr = newStr.replace(/([^\w]+|\s+)/g, '')
 
-    if(typeof withoutSpace !== 'undefined'){
-        newStr = newStr.replace(/SpAcEsPaCe/g, '_')
+        if(typeof withoutSpace !== 'undefined'){
+            newStr = newStr.replace(/SpAcEsPaCe/g, '_')
+        }else{
+            newStr = newStr.replace(/SpAcEsPaCe/g, ' ')
+        }
+
+        if(typeof withoutDot !== 'undefined'){
+            newStr = newStr.replace(/DoTdOt/g, '')
+        }else{
+            newStr = newStr.replace(/DoTdOt/g, '.')
+        }
+
+        if(typeof withAtSign === 'undefined'){
+            newStr = newStr.replace(/AtSiGnAtSiGn/g, '')
+        }else{
+            newStr = newStr.replace(/AtSiGnAtSiGn/g, '@')
+        }
+
+        if(typeof withComma === 'undefined'){
+            newStr = newStr.replace(/CoMmAcOmMa/g, '')
+        }else{
+            newStr = newStr.replace(/CoMmAcOmMa/g, ',')
+        }
+
+        return newStr
     }else{
-        newStr = newStr.replace(/SpAcEsPaCe/g, ' ')
+        return str
     }
-
-    if(typeof withoutDot !== 'undefined'){
-        newStr = newStr.replace(/DoTdOt/g, '')
-    }else{
-        newStr = newStr.replace(/DoTdOt/g, '.')
-    }
-
-    return newStr
 }
 
 export function count(obj){
-    if(typeof obj === 'undefined'){
+    if(!verifyVariable(obj)){
         return 0
     }else{
         return obj.length
@@ -71,18 +89,117 @@ export function diacriticSensitiveRegex(string = '') {
        .replace(/u/g, '[u,ü,ú,ù]');
 }
 
+export function formatCep(cep){
+    if(strlen(cep)==0){
+        return '';
+    }else{
+        cep = cep.substr(0, 2) + "." + cep.substr(2, 3) + "-" + cep.substr(5, 3);
+        return cep;
+    }
+}
+
+export function formatCpfCnpj(cpfCnpj){
+    if(!verifyVariable(cpfCnpj)){
+        return cpfCnpj
+    }else{
+        cpfCnpj = clearNumber(cpfCnpj)
+        if(strlen(cpfCnpj)>11){
+            if(strlen(cpfCnpj)==13){
+                cpfCnpj = '0' + cpfCnpj                
+            }
+            return cpfCnpj.substr(0,2) + '.' + cpfCnpj.substr(2,3) + '.' + cpfCnpj.substr(5,3) + '/' + cpfCnpj.substr(8,4) + '-' + cpfCnpj.substr(12,2)
+        }else{
+            if(strlen(cpfCnpj)==10){
+                cpfCnpj = '0' + cpfCnpj                
+            }
+            return cpfCnpj.substr(0,3) + '.' + cpfCnpj.substr(3,3) + '.' + cpfCnpj.substr(6,3) + '-' + cpfCnpj.substr(9,2)
+        }
+    }
+}
+
+export function formatDate(timestamp,mode){
+    const now = new Date()
+    now.setTime(timestamp)
+
+    if(mode=='date abb 1'){
+        return zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear()
+    }else{
+        return zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)
+    }
+}
+
+export function formatPhone(phone){
+    phone = clearNumber(phone)
+    
+    if(strlen(phone)>0){
+        var newPhone = ''
+        if(strlen(phone)<=4){
+            if(phone==0){
+                newPhone = '';
+            }else{
+                newPhone = phone;
+            }
+        }else{
+            if(strlen(phone)>4 && strlen(phone)<=8){
+                newPhone = phone.substr(-4);
+                newPhone = phone.substr(-strlen(phone)).substr(0,strlen(phone)-4) + "-" + newPhone;
+            }else if(strlen(phone)>4 && strlen(phone)<=9){
+                newPhone = phone.substr(-4);
+                newPhone = phone.substr(-strlen(phone)).substr(0,strlen(phone)-4) + "-" + newPhone;
+            }else if(strlen(phone)==10 && phone.substr(0,1)!=0){
+                newPhone = phone.substr(-4);
+                newPhone = phone.substr(-8).substr(0,4) + "-" + newPhone;
+                newPhone = "(" + phone.substr(0,2) + ") " + newPhone;
+            }else if(strlen(phone)==11 && phone.substr(0,1)!=0){
+                newPhone = phone.substr(-4);
+                newPhone = phone.substr(-9).substr(0,5) + "-" + newPhone;
+                newPhone = "(" + phone.substr(0,2) + ") " + newPhone;
+            }
+        }
+        return newPhone;
+    }else{
+        return '';
+    }
+}
+
+export function formatRgIe(rgIe){
+    if(!verifyVariable(rgIe)){
+        return rgIe
+    }else{
+        rgIe = clearNumber(rgIe)
+        if(strlen(rgIe)==9){
+            return rgIe.substr(0,2) + '.' + rgIe.substr(2,3) + '.' + rgIe.substr(5,3) + '-' + rgIe.substr(8,1)
+        }else{
+            var newRgIe = ''
+            var rgIeTemp = rgIe
+            while(strlen(rgIeTemp)>0){
+                if(strlen(newRgIe)>0){
+                    newRgIe += '.'
+                }
+                newRgIe += rgIeTemp.substr(0,3)
+                rgIeTemp = rgIeTemp.substr(3)
+            }
+            return newRgIe
+        }
+    }
+}
+
 export function formatTimestamp(date){
-    date = date.replace(/T/g,'-')
-    date = date.replace(/:/g,'-')
-    date = date.split('-')
-    var year = (date[0] !== undefined ? date[0] : 0)
-    var month = (date[1] !== undefined ? (date[1] - 1) : 0)
-    var day = (date[2] !== undefined ? date[2] : 0)
-    var hours = (date[3] !== undefined ? date[3] : 0)
-    var minutes = (date[4] !== undefined ? date[4] : 0)
-    var seconds = (date[5] !== undefined ? date[5] : 0)
-    var timestamp = new Date(year, month, day, hours, minutes, seconds, 0).getTime()
-    return timestamp
+    if(verifyVariable(date)){
+        date = date.replace(/T/g,'-')
+        date = date.replace(/:/g,'-')
+        date = date.split('-')
+        var year = (date[0] !== undefined ? date[0] : 0)
+        var month = (date[1] !== undefined ? (date[1] - 1) : 0)
+        var day = (date[2] !== undefined ? date[2] : 0)
+        var hours = (date[3] !== undefined ? date[3] : 0)
+        var minutes = (date[4] !== undefined ? date[4] : 0)
+        var seconds = (date[5] !== undefined ? date[5] : 0)
+        var timestamp = new Date(year, month, day, hours, minutes, seconds, 0).getTime()
+        return timestamp
+    }else{
+        return date
+    }
 }
 
 export function fromTo(map,data){
@@ -215,7 +332,7 @@ export function sign(obj){
 }
 
 export function strlen(string){
-    if(typeof string === 'undefined'){
+    if(!verifyVariable(string)){
         return 0
     }else{
         return string.toString().length
@@ -223,7 +340,7 @@ export function strlen(string){
 }
 
 export function strlower(string){
-    if(typeof string === 'undefined'){
+    if(!verifyVariable(string)){
         return ''
     }else{
         return string.toLowerCase()
@@ -231,7 +348,7 @@ export function strlower(string){
 }
 
 export function strupper(string){
-    if(typeof string === 'undefined'){
+    if(!verifyVariable(string)){
         return ''
     }else{
         return string.toUpperCase()
@@ -322,10 +439,20 @@ export function verifyCpfCnpj(cpfCnpj){
     }
 }
 
+export function verifyVariable(variable){
+    if(variable === undefined){
+        return false
+    }else if(variable == null){
+        return false
+    }else{
+        return true
+    }
+}
+
 export function zeroLeft(value,digit){
     var zeroLeft = "";
 
-    if(typeof value !== 'undefined'){
+    if(verifyVariable(value)){
         for(var i = 0;i < (digit - value.toString().length);i++){
             zeroLeft = "0" + zeroLeft;
         }
