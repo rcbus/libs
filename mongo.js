@@ -30,8 +30,31 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
             var searchTemp = []
             Object.values(data.config).map(v => {
                 if(v.searchable=='true'){
-                    var regex = new RegExp(diacriticSensitiveRegex(data.search),'i');
-                    searchTemp.push({[v.column]:{$regex:regex}})
+                    if(data.search.indexOf('*#')!=-1){
+                        var regexArray = []
+                        regexArray = data.search.split('*#')
+                        regexArray.map(regexTemp => {
+                            var regex = new RegExp(diacriticSensitiveRegex(regexTemp),'i');
+                            searchTemp.push({[v.column]:{$regex:regex}})
+                        })
+                    }else if(data.search.indexOf('*')!=-1){
+                        var regexArray = []
+                        var regexConcat = ''
+
+                        regexArray = data.search.split('*')
+                        regexArray.map(regexTemp => {
+                            if(strlen(regexConcat)>0){
+                                regexConcat += '.*'
+                            }
+                            regexConcat += regexTemp
+                        })
+
+                        var regex = new RegExp(diacriticSensitiveRegex(regexConcat),'i');
+                        searchTemp.push({[v.column]:{$regex:regex}})
+                    }else{
+                        var regex = new RegExp(diacriticSensitiveRegex(data.search),'i');
+                        searchTemp.push({[v.column]:{$regex:regex}})
+                    }
                 }
             })
             data.condition = setSubState(data.condition,{$or:searchTemp})
@@ -42,6 +65,32 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
                 result(200,{res:'error',error:resultMongo.error},res,resolve)
             }else{
                 resultMongo.data = exeProcessing(processing,resultMongo.data)
+                if(data.toSelect !== undefined){
+                    if(data.toSelect.value !== undefined){
+                        if(data.toSelect.text !== undefined){
+                            var textArray = []
+                            if(typeof data.toSelect.text === 'string'){
+                                textArray.push(data.toSelect.text)
+                            }else{
+                                textArray = data.toSelect.text
+                            }
+                            resultMongo.data = resultMongo.data.map(mongoData => {
+                                var newText = ''
+                                textArray.map(text => {
+                                    if(mongoData[text] !== undefined){
+                                        if(strlen(newText)>0){
+                                            newText += ' - '
+                                        }
+                                        
+                                        newText += mongoData[text]
+                                    }
+                                })
+                                return {value:mongoData[data.toSelect.value],text:newText}
+                            })
+                        }
+                    }
+                }
+
                 var resultData = {
                     data:resultMongo.data
                 }
@@ -63,7 +112,9 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
                 result(200,{res:'error',error:msgVerify},res,resolve)
             }else{
                 if(strlen(data._id)==0){
-                    data.status = 1
+                    if(data.status === undefined){
+                        data.status = 1
+                    }
                     ins(collection,data,(resultMongo) => {
                         if(resultMongo.error){
                             result(200,{res:'error',error:resultMongo.error},res,resolve)
@@ -263,7 +314,7 @@ export function sel(collection,data,projection,callback,sort,limit){
             const db = client.db(process.env.dbName).collection(collection)
 
             result.error = false
-            db.find(data,projection).limit(limit).sort(sort).collation({locale: "en_US", numericOrdering: true}).toArray((error,result) => {
+            db.find(data).project(projection).limit(limit).sort(sort).collation({locale: "en_US", numericOrdering: true}).toArray((error,result) => {
                 if(error){
                     console.log('> error: ' + error)
                     callback({error})
