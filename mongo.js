@@ -214,6 +214,7 @@ export function ins(collection,data,callback,randomId){
             data.date = now.getTime(),
             data.dateModification = now.getTime(),
             data.historic = '# CRIADO POR ' + data.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
+            data.status = (typeof data.status !== 'undefined' ? data.status : 1),
 
             db.insertOne(data,(error,result) => {
                 if(error){
@@ -265,6 +266,7 @@ export function insArray(collection,data,callback){
                     v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
                     v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
                     v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
+                    v.status = (typeof v.status !== 'undefined' ? v.status : 1),
                     startId = startId + 1
                 })
 
