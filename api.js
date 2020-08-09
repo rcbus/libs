@@ -1,5 +1,5 @@
 import { strlen } from '../libs/functions'
-/*import { sel,upd,ins } from './mongo'*/
+import { openLoading,closeLoading } from '../components/loading'
 
 export async function api(host,token,data,callback) {
     const res = await fetch(host,{
@@ -17,6 +17,31 @@ export async function api(host,token,data,callback) {
             return true
         }
     }
+}
+
+export async function getListSelect(pathApi,toSelect,callbackSetList,condition,loading){
+    var data = {}
+    if(condition === undefined){
+        data.condition = {status:1}
+    }else{
+        data.condition = condition
+    }
+    data.config = ''
+    data.search = ''
+    data.toSelect = toSelect
+    if(loading !== undefined){
+        openLoading({count:[1,5,60]})
+    }
+    api(process.env.protocolApi + '://' + process.env.hostApi + ':' + process.env.portApi + '/' + pathApi,process.env.tokenApi,data,(res) => {
+        if(res.res=="error"){
+            openMsg({text:res.error,type:-1})
+        }else{
+            callbackSetList(res.data.data)
+        }
+        if(loading !== undefined){
+            closeLoading()
+        }
+    })
 }
 
 export function result(code,json,res,resolve){
