@@ -19,6 +19,10 @@ export async function api(host,token,data,callback) {
     }
 }
 
+export function getHostApi(){
+    return process.env.protocolApi + '://' + process.env.hostApi + ':' + process.env.portApi + '/'
+}
+
 export async function getListSelect(pathApi,toSelect,callbackSetList,condition,loading){
     var data = {}
     if(condition === undefined){
