@@ -60,7 +60,7 @@ export async function apiReceiveUpload(req,res,resolve,reject){
                             newName = strlower(newName)
 
                             newName = `${hash.toString("hex")}_${newName}`;
-                            console.log('teste: ' + params._id)
+                            
                             if(strlen(params._id)==0){
                                 storage(params,res,resolve,files.file.path,newName,oldName,type);
                             }else{

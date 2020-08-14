@@ -62,22 +62,18 @@ export function decimal(number,precision,usa){
     var numberTemp = number
     
     if(typeof numberTemp === 'string'){
-        console.log('1: ' + numberTemp)
         if(numberTemp.indexOf(',')!=-1){
             numberTemp = numberTemp.replace('.','')
             numberTemp = numberTemp.replace(',','.')
         }
         numberTemp = parseFloat(numberTemp)
-        console.log('2: ' + numberTemp)
     }
 
     numberTemp = numberTemp * 1
-    console.log('3: ' + numberTemp)
     if(typeof usa === 'undefined'){
         numberTemp = numberTemp.toFixed(precision)
         numberTemp = numberTemp.replace('.',',')
-    }
-    console.log('4: ' + numberTemp) 
+    } 
     return numberTemp
 }
 

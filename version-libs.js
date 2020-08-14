@@ -1,4 +1,4 @@
-const version = '1.1.7';
+const version = '1.1.8';
 
 export default function Version() {
   return (
@@ -11,6 +11,7 @@ export default function Version() {
 /*
 Histórico de versões
 
+1.1.8 - 13/08/2020
 1.1.7 - 11/08/2020
 1.1.6 - 09/08/2020
 1.1.5 - 08/08/2020
