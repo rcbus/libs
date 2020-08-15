@@ -108,11 +108,11 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
         sel(collection,verify,{},(resultMongo) => {
             if(resultMongo.error){
                 result(200,{res:'error',error:resultMongo.error},res,resolve)
-            }else if(strlen(resultMongo.data)>0 && (data.status==1 || strlen(data._id)==0)){
+            }else if(strlen(resultMongo.data)>0 && (data.status==1 || strlen(data._id)==0) && count(Object.keys(verify))>0){
                 result(200,{res:'error',error:msgVerify},res,resolve)
             }else{
                 if(strlen(data._id)==0){
-                    if(data.status === undefined){
+                    if(strlen(data.status) == 0){
                         data.status = 1
                     }
                     ins(collection,data,(resultMongo) => {
@@ -214,7 +214,7 @@ export function ins(collection,data,callback,randomId){
             data.date = now.getTime(),
             data.dateModification = now.getTime(),
             data.historic = '# CRIADO POR ' + data.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
-            data.status = (typeof data.status !== 'undefined' ? data.status : 1),
+            data.status = (strlen(data.status)>0 ? data.status : 1),
 
             db.insertOne(data,(error,result) => {
                 if(error){
@@ -266,7 +266,7 @@ export function insArray(collection,data,callback){
                     v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
                     v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
                     v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
-                    v.status = (typeof v.status !== 'undefined' ? v.status : 1),
+                    v.status = (strlen(v.status)>0 ? v.status : 1),
                     startId = startId + 1
                 })
 

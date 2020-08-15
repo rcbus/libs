@@ -1,4 +1,4 @@
-import { strlen } from '../libs/functions'
+import { strlen, verifyVariable } from '../libs/functions'
 import { openLoading,closeLoading } from '../components/loading'
 
 export async function api(host,token,data,callback) {
@@ -21,6 +21,48 @@ export async function api(host,token,data,callback) {
 
 export function getHostApi(){
     return process.env.protocolApi + '://' + process.env.hostApi + ':' + process.env.portApi + '/'
+}
+
+export function getListData(pathApi,collection,config,callbackSetList,callbackSetConfig,idRef,condition,loading){
+    if(verifyVariable(pathApi) && verifyVariable(collection)){
+        var data = {}
+
+        data.condition = {}
+        data.config = config
+        data.search = ''
+
+        if(loading !== undefined){
+            openLoading({count:[1,5,60]})
+        }        
+      
+        if(verifyVariable(condition)>0){
+            data.condition = condition
+        }
+
+        if(verifyVariable(data.condition.status)==0){
+            data.condition.status = 1
+        }
+
+        if(verifyVariable(idRef)>0){
+            data.condition.idRef = idRef
+        }
+
+        api(process.env.protocolApi + '://' + process.env.hostApi + ':' + process.env.portApi + '/' + pathApi,process.env.tokenApi,data,(res) => {
+            if(res.res=="error"){
+                openMsg({text:res.error,type:-1})
+            }else{
+                if(callbackSetConfig){
+                    callbackSetConfig(res.data.config)
+                }
+                if(callbackSetList){
+                    callbackSetList(res.data.data)
+                }
+            }
+            if(loading !== undefined){
+                closeLoading()
+            }
+        })
+    }
 }
 
 export async function getListSelect(pathApi,toSelect,callbackSetList,condition,loading){
