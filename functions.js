@@ -124,6 +124,18 @@ export function formatDate(timestamp,mode){
     }
 }
 
+export function formatNumber(number,mode){
+    if(mode === undefined){
+        if(verifyVariable(number)){
+            return number.replace(/\./g, ',')
+        }else{
+            return number
+        }
+    }else{
+        return number
+    }
+}
+
 export function formatPhone(phone){
     phone = clearNumber(phone)
     
