@@ -158,11 +158,13 @@ export function getNextId(collection,callback,add,randomId){
                         db.insertOne({_id:collection,next:0},(error,result) => {
                             if(error){
                                 console.log('> error: ' + error)
+                                client.close()
                                 callback({error})
                             }else{
                                 db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
                                     if(error){
                                         console.log('> error: ' + error)
+                                        client.close()
                                         callback({error})
                                     }else{
                                         error = false
@@ -176,6 +178,7 @@ export function getNextId(collection,callback,add,randomId){
                         db.findOneAndUpdate({_id:collection},{$inc:{next:add}},(error,result) => {
                             if(error){
                                 console.log('> error: ' + error)
+                                client.close()
                                 callback({error})
                             }else{
                                 error = false
@@ -219,6 +222,7 @@ export function ins(collection,data,callback,randomId){
             db.insertOne(data,(error,result) => {
                 if(error){
                     console.log('> error: ' + error)
+                    client.close()
                     callback({error})
                 }else{
                     error = false
@@ -226,9 +230,11 @@ export function ins(collection,data,callback,randomId){
                     db.find(data).limit(1).sort({date:-1}).toArray((error,result) => {
                         if(error){
                             console.log('> error: ' + error)
+                            client.close()
                             callback({error})
                         }else{
                             error = false
+                            client.close()
                             callback({error,data:result})
                         }
                     })
@@ -273,10 +279,12 @@ export function insArray(collection,data,callback){
                 db.insertMany(data,(error,result) => {
                     if(error){
                         console.log('> error: ' + error)
+                        client.close()
                         callback({error})
                     }else{
                         error = false
                         console.log('> [mongodb]: inserted array successfully')
+                        client.close()
                         callback({error,data:result})
                     }
                 })
@@ -319,10 +327,72 @@ export function sel(collection,data,projection,callback,sort,limit){
             db.find(data).project(projection).limit(limit).sort(sort).collation({locale: "en_US", numericOrdering: true}).toArray((error,result) => {
                 if(error){
                     console.log('> error: ' + error)
+                    client.close()
                     callback({error})
                 }else{
                     error = false
                     console.log('> [mongodb]: successfully selected')
+                    client.close()
+                    callback({error,data:result})
+                }
+            })
+        }
+    })
+}
+
+export function selJoin(collection,collectionJoin,fieldKey,fieldAs,condition,projection,callback,sort,limit){
+    if(typeof limit === 'undefined'){ limit = 100 }
+    if(typeof sort === 'undefined'){ sort = {} }
+    con((result) => {
+        if(result.error){
+            result.client = false
+            callback({error:result.error})
+        }else{
+            const client = result.client
+            const db = client.db(process.env.dbName).collection(collection)
+
+            result.error = false
+
+            db.aggregate([
+                {
+                    $lookup:{
+                        from:collectionJoin,
+                        let:{
+                            idTemp:'$' + fieldKey
+                        },
+                        pipeline:[
+                            {
+                                $match:{
+                                    $expr:{
+                                        $and:condition
+                                    }
+                                }
+                            }
+                        ],
+                        as:fieldAs
+                    }
+                },
+                {
+                    $unwind:{ 
+                        path:'$' + fieldAs,
+                        preserveNullAndEmptyArrays:false 
+                    }
+                },
+                {
+                    $sort:sort
+                },
+                {
+                    $limit:limit
+                }
+            ]).toArray((error,result) => {
+                if(error){
+                    console.log('> error: ' + error)
+                    client.close()
+                    callback({error})
+                }else{
+                    error = false
+                    console.log('> [mongodb]: successfully selected')
+                    client.close()
                     callback({error,data:result})
                 }
             })
@@ -352,6 +422,7 @@ export function upd(collection,data,callback,withoutHistoric){
                 db.find({_id:data._id}).toArray((error,result) => {
                     if(error){
                         console.log('> error: ' + error)
+                        client.close()
                         callback({error})
                     }else{
                         const dataBefore = result[0]
@@ -391,10 +462,12 @@ export function upd(collection,data,callback,withoutHistoric){
                         db.updateOne({_id:data._id},{$set:data},null,(error,result) => {
                             if(error){
                                 console.log('> error: ' + error)
+                                client.close()
                                 callback({error})
                             }else{
                                 error = false
                                 console.log('> [mongodb]: updated successfully')
+                                client.close()
                                 callback({error,data:[data]})
                             }
                         })

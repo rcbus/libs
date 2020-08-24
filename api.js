@@ -90,6 +90,10 @@ export async function getListSelect(pathApi,toSelect,callbackSetList,condition,l
     })
 }
 
+export function getTokenApi(){
+    return process.env.tokenApi
+}
+
 export function result(code,json,res,resolve){
     res.statusCode = code
     res.json(json)
