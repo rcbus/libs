@@ -24,45 +24,22 @@ export async function con(callback){
     })
 }
 
-export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,sort,limit,processing){  
+export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,sort,limit,processing,collectionConfig,callback){  
+    if(collectionConfig === undefined){ collectionConfig = collection }
+    
     if(verifyCrudad(data)=='read'){
         if(strlen(data.search)>0 && strlen(data.config)>0){
-            var searchTemp = []
-            Object.values(data.config).map(v => {
-                if(v.searchable=='true'){
-                    if(data.search.indexOf('*#')!=-1){
-                        var regexArray = []
-                        regexArray = data.search.split('*#')
-                        regexArray.map(regexTemp => {
-                            var regex = new RegExp(diacriticSensitiveRegex(regexTemp),'i');
-                            searchTemp.push({[v.column]:{$regex:regex}})
-                        })
-                    }else if(data.search.indexOf('*')!=-1){
-                        var regexArray = []
-                        var regexConcat = ''
-
-                        regexArray = data.search.split('*')
-                        regexArray.map(regexTemp => {
-                            if(strlen(regexConcat)>0){
-                                regexConcat += '.*'
-                            }
-                            regexConcat += regexTemp
-                        })
-
-                        var regex = new RegExp(diacriticSensitiveRegex(regexConcat),'i');
-                        searchTemp.push({[v.column]:{$regex:regex}})
-                    }else{
-                        var regex = new RegExp(diacriticSensitiveRegex(data.search),'i');
-                        searchTemp.push({[v.column]:{$regex:regex}})
-                    }
-                }
-            })
+            var searchTemp = search(data.search,data.config)
             data.condition = setSubState(data.condition,{$or:searchTemp})
         }
 
-        sel(collection,data.condition,{},(resultMongo) => {
+        sel(collection,data.condition,{ahnes:false},(resultMongo) => {
             if(resultMongo.error){
-                result(200,{res:'error',error:resultMongo.error},res,resolve)
+                if(!callback){
+                    result(200,{res:'error',error:resultMongo.error},res,resolve)
+                }else{
+                    callback({res:'error',error:resultMongo.error})
+                }
             }else{
                 resultMongo.data = exeProcessing(processing,resultMongo.data)
                 if(data.toSelect !== undefined){
@@ -94,12 +71,20 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
                 var resultData = {
                     data:resultMongo.data
                 }
-                sel('config',{collection},{branch:false,user:false,date:false,dateModification:false,historic:false},(resultMongo) => {
+                sel('config',{collection:collectionConfig},{branch:false,user:false,date:false,dateModification:false,historic:false},(resultMongo) => {
                     if(resultMongo.error){
-                        result(200,{res:'error',error:resultMongo.error},res,resolve)
+                        if(!callback){
+                            result(200,{res:'error',error:resultMongo.error},res,resolve)
+                        }else{
+                            callback({res:'error',error:resultMongo.error})
+                        }
                     }else{
-                        resultData.config = resultMongo.data
-                        result(200,{ res: 'success',data: resultData },res,resolve)
+                        resultData.config = resultMongo.data                        
+                        if(!callback){
+                            result(200,{ res: 'success',data: resultData },res,resolve)
+                        }else{
+                            callback({ res: 'success',data: resultData })
+                        }
                     }
                 })
             }
@@ -107,9 +92,17 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
     }else{   
         sel(collection,verify,{},(resultMongo) => {
             if(resultMongo.error){
-                result(200,{res:'error',error:resultMongo.error},res,resolve)
+                if(!callback){
+                    result(200,{res:'error',error:resultMongo.error},res,resolve)
+                }else{
+                    callback({res:'error',error:resultMongo.error})
+                }
             }else if(strlen(resultMongo.data)>0 && (data.status==1 || strlen(data._id)==0) && count(Object.keys(verify))>0){
-                result(200,{res:'error',error:msgVerify},res,resolve)
+                if(!callback){
+                    result(200,{res:'error',error:msgVerify},res,resolve)
+                }else{
+                    callback({res:'error',error:msgVerify})
+                }
             }else{
                 if(strlen(data._id)==0){
                     if(strlen(data.status) == 0){
@@ -117,19 +110,35 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
                     }
                     ins(collection,data,(resultMongo) => {
                         if(resultMongo.error){
-                            result(200,{res:'error',error:resultMongo.error},res,resolve)
+                            if(!callback){
+                                result(200,{res:'error',error:resultMongo.error},res,resolve)
+                            }else{
+                                callback({res:'error',error:resultMongo.error})
+                            }
                         }else{
                             resultMongo.data = exeProcessing(processing,resultMongo.data)
-                            result(200,{ res: 'success',data:resultMongo.data },res,resolve)
+                            if(!callback){
+                                result(200,{ res: 'success',data:resultMongo.data },res,resolve)
+                            }else{
+                                callback({ res: 'success',data:resultMongo.data })
+                            }
                         }
                     })
                 }else{
                     upd(collection,data,(resultMongo) => {
                         if(resultMongo.error){
-                            result(200,{res:'error',error:resultMongo.error},res,resolve)
+                            if(!callback){
+                                result(200,{res:'error',error:resultMongo.error},res,resolve)
+                            }else{
+                                callback({res:'error',error:resultMongo.error})
+                            }
                         }else{
                             resultMongo.data = exeProcessing(processing,resultMongo.data)
-                            result(200,{ res:'success',data:resultMongo.data },res,resolve)
+                            if(!callback){
+                                result(200,{ res:'success',data:resultMongo.data },res,resolve)
+                            }else{
+                                callback({ res:'success',data:resultMongo.data })
+                            }
                         }
                     })
                 }
@@ -138,13 +147,14 @@ export function crudab(req,res,resolve,reject,collection,verify,msgVerify,data,s
     }
 }
 
-export function getNextId(collection,callback,add,randomId){
+export async function getNextId(collection,callback,add,randomId){
     if(typeof add === 'undefined'){
         add = 1
     }
 
     con((result) => {
         if(result.error){
+            result.client.close()
             result.client = false
             callback({error:result.error})
         }else{
@@ -196,8 +206,11 @@ export function getNextId(collection,callback,add,randomId){
     })
 }
 
-export function ins(collection,data,callback,randomId){
-    getNextId(collection,(result) => {
+export async function ins(collection,data,callback,randomId,counters){
+    if(counters === undefined){
+        counters = collection
+    }
+    getNextId(counters,(result) => {
         if(result.error){
             result.client = false
             callback({error:result.error})
@@ -210,41 +223,48 @@ export function ins(collection,data,callback,randomId){
             if(result.newId!='random'){
                 data._id = result.newId
             }
-            data.branch = (typeof data.branch !== 'undefined' ? data.branch : 1)
-            data.branchName = (typeof data.branchName !== 'undefined' ? data.branchName : '')
-            data.user = (typeof data.user !== 'undefined' ? data.user : 1)
-            data.userName = (typeof data.userName !== 'undefined' ? ("(" + data.user + ") " + data.userName) : '')
-            data.date = now.getTime(),
-            data.dateModification = now.getTime(),
-            data.historic = '# CRIADO POR ' + data.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
-            data.status = (strlen(data.status)>0 ? data.status : 1),
 
-            db.insertOne(data,(error,result) => {
-                if(error){
-                    console.log('> error: ' + error)
-                    client.close()
-                    callback({error})
-                }else{
-                    error = false
-                    console.log('> [mongodb]: inserted successfully')
-                    db.find(data).limit(1).sort({date:-1}).toArray((error,result) => {
-                        if(error){
-                            console.log('> error: ' + error)
-                            client.close()
-                            callback({error})
-                        }else{
-                            error = false
-                            client.close()
-                            callback({error,data:result})
-                        }
-                    })
-                }
+            security(data,client,callback,() => {
+                data.branch = (typeof data.branch !== 'undefined' ? data.branch : 1)
+                data.branchName = (typeof data.branchName !== 'undefined' ? data.branchName : '')
+                data.user = (typeof data.user !== 'undefined' ? data.user : 1)
+                data.userName = (typeof data.userName !== 'undefined' ? ("(" + data.user + ") " + data.userName) : '(1) ADMIN')
+                data.userUpdate = (typeof data.userUpdate !== 'undefined' ? data.userUpdate : 1)
+                data.userNameUpdate = (typeof data.userNameUpdate !== 'undefined' ? ("(" + data.userUpdate + ") " + data.userNameUpdate) : '(1) ADMIN')
+                data.date = now.getTime(),
+                data.dateModification = now.getTime(),
+                data.historic = '# CRIADO POR ' + data.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)                 
+                data.status = (strlen(data.status)>0 ? data.status : 1),
+                delete data.token
+                delete data.access
+
+                db.insertOne(data,(error,result) => {
+                    if(error){
+                        console.log('> error: ' + error)
+                        client.close()
+                        callback({error})
+                    }else{
+                        error = false
+                        console.log('> [mongodb]: inserted successfully')
+                        db.find(data).limit(1).sort({date:-1}).toArray((error,result) => {
+                            if(error){
+                                console.log('> error: ' + error)
+                                client.close()
+                                callback({error})
+                            }else{
+                                error = false
+                                client.close()
+                                callback({error,data:result})
+                            }
+                        })
+                    }
+                })
             })
         }
     },undefined,randomId)
 }
 
-export function insArray(collection,data,callback){
+export async function insArray(collection,data,callback){
     if(Array.isArray(data)===false){
         result.client = false
         console.log('> error: data is not array')
@@ -263,30 +283,36 @@ export function insArray(collection,data,callback){
 
                 var startId = result.newId - (data.length - 1)
 
-                data.map(v => {
-                    v._id = startId
-                    v.branch = (typeof v.branch !== 'undefined' ? v.branch : 1)
-                    v.branchName = (typeof v.branchName !== 'undefined' ? v.branchName : '')
-                    v.user = (typeof v.user !== 'undefined' ? v.user : 1)
-                    v.userName = (typeof v.userName !== 'undefined' ? ("(" + v.user + ") " + v.userName) : '')
-                    v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
-                    v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
-                    v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
-                    v.status = (strlen(v.status)>0 ? v.status : 1),
-                    startId = startId + 1
-                })
+                security(data,client,callback,() => {
+                    data.map(v => {
+                        v._id = startId
+                        v.branch = (typeof v.branch !== 'undefined' ? v.branch : 1)
+                        v.branchName = (typeof v.branchName !== 'undefined' ? v.branchName : '')
+                        v.user = (typeof v.user !== 'undefined' ? v.user : 1)
+                        v.userName = (typeof v.userName !== 'undefined' ? ("(" + v.user + ") " + v.userName) : '(1) ADMIN')
+                        v.userUpdate = (typeof v.userUpdate !== 'undefined' ? v.userUpdate : 1)
+                        v.userNameUpdate = (typeof v.userNameUpdate !== 'undefined' ? ("(" + v.userUpdate + ") " + v.userName) : '(1) ADMIN')
+                        v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
+                        v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
+                        v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
+                        v.status = (strlen(v.status)>0 ? v.status : 1),
+                        delete v.token
+                        delete v.access
+                        startId = startId + 1
+                    })
 
-                db.insertMany(data,(error,result) => {
-                    if(error){
-                        console.log('> error: ' + error)
-                        client.close()
-                        callback({error})
-                    }else{
-                        error = false
-                        console.log('> [mongodb]: inserted array successfully')
-                        client.close()
-                        callback({error,data:result})
-                    }
+                    db.insertMany(data,(error,result) => {
+                        if(error){
+                            console.log('> error: ' + error)
+                            client.close()
+                            callback({error})
+                        }else{
+                            error = false
+                            console.log('> [mongodb]: inserted array successfully')
+                            client.close()
+                            callback({error,data:result})
+                        }
+                    })
                 })
             }
         },data.length)
@@ -312,7 +338,74 @@ export function exeProcessing(processing,data){
     return data
 }
 
-export function sel(collection,data,projection,callback,sort,limit){
+export function search(search,config){
+    var searchTemp = []
+    if(strlen(search)>0 && count(config)>0){
+        Object.values(config).map(v => {
+            if(v.searchable=='true'){
+                if(search.indexOf('*#')!=-1){
+                    var regexArray = []
+                    regexArray = search.split('*#')
+                    regexArray.map(regexTemp => {
+                        var regex = new RegExp(diacriticSensitiveRegex(regexTemp),'i');
+                        searchTemp.push({[v.column]:{$regex:regex}})
+                    })
+                }else if(search.indexOf('*')!=-1){
+                    var regexArray = []
+                    var regexConcat = ''
+
+                    regexArray = search.split('*')
+                    regexArray.map(regexTemp => {
+                        if(strlen(regexConcat)>0){
+                            regexConcat += '.*'
+                        }
+                        regexConcat += regexTemp
+                    })
+
+                    var regex = new RegExp(diacriticSensitiveRegex(regexConcat),'i');
+                    searchTemp.push({[v.column]:{$regex:regex}})
+                }else{
+                    var regex = new RegExp(diacriticSensitiveRegex(search),'i');
+                    searchTemp.push({[v.column]:{$regex:regex}})
+                }
+            }
+        })
+    }
+    return searchTemp
+}
+
+export async function security(data,client,callback,callbackSecurity,withoutToken){
+    var token = data.token
+    var user = data.userUpdate
+    if(process.env.security===true && withoutToken === undefined){
+        if(token === undefined){
+            var error = 'Falha de segurança(1)!'
+            console.log('> error: ' + error)
+            client.close()
+            callback({error:(error + '<br>Fale com o administrador do sistema.')})
+        }else{
+            await sel('cadastro_pessoa',{_id:user,token:token},{_id:true},(resultMongo) => {
+                if(resultMongo.error){
+                    var error = 'Falha de segurança(2)!'
+                    console.log('> error: ' + error)
+                    client.close()
+                    callback({error:(error + '<br>Fale com o administrador do sistema.')})
+                }else if(count(resultMongo.data)==0){
+                    var error = 'Falha de segurança(3)!'
+                    console.log('> error: ' + error)
+                    client.close()
+                    callback({error:(error + '<br>Fale com o administrador do sistema.')})
+                }else{
+                    callbackSecurity()
+                }
+            })
+        }
+    }else{
+        callbackSecurity()
+    }
+}
+
+export async function sel(collection,data,projection,callback,sort,limit){
     if(typeof limit === 'undefined'){ limit = 100 }
     if(typeof sort === 'undefined'){ sort = {} }
     con((result) => {
@@ -340,67 +433,7 @@ export function sel(collection,data,projection,callback,sort,limit){
     })
 }
 
-export function selJoin(collection,collectionJoin,fieldKey,fieldAs,condition,projection,callback,sort,limit){
-    if(typeof limit === 'undefined'){ limit = 100 }
-    if(typeof sort === 'undefined'){ sort = {} }
-    con((result) => {
-        if(result.error){
-            result.client = false
-            callback({error:result.error})
-        }else{
-            const client = result.client
-            const db = client.db(process.env.dbName).collection(collection)
-
-            result.error = false
-
-            db.aggregate([
-                {
-                    $lookup:{
-                        from:collectionJoin,
-                        let:{
-                            idTemp:'$' + fieldKey
-                        },
-                        pipeline:[
-                            {
-                                $match:{
-                                    $expr:{
-                                        $and:condition
-                                    }
-                                }
-                            }
-                        ],
-                        as:fieldAs
-                    }
-                },
-                {
-                    $unwind:{ 
-                        path:'$' + fieldAs,
-                        preserveNullAndEmptyArrays:false 
-                    }
-                },
-                {
-                    $sort:sort
-                },
-                {
-                    $limit:limit
-                }
-            ]).toArray((error,result) => {
-                if(error){
-                    console.log('> error: ' + error)
-                    client.close()
-                    callback({error})
-                }else{
-                    error = false
-                    console.log('> [mongodb]: successfully selected')
-                    client.close()
-                    callback({error,data:result})
-                }
-            })
-        }
-    })
-}
-
-export function upd(collection,data,callback,withoutHistoric){
+export async function upd(collection,data,callback,withoutHistoric,withoutToken){
     if(typeof data._id === 'undefined'){
         console.log('> error: _id undefined')
         callback({error:'_id undefined'})
@@ -431,7 +464,7 @@ export function upd(collection,data,callback,withoutHistoric){
 
                         var modified = ""
                         Object.keys(data).map((key) => {
-                            if(key!='historic' && key!='dateModification'){
+                            if(key!='historic' && key!='dateModification' && key!='access' && key!='token'){
                                 if(typeof dataBefore[key] === 'undefined'){
                                     if(modified.length>0){
                                         modified = modified + ','
@@ -456,21 +489,32 @@ export function upd(collection,data,callback,withoutHistoric){
                             modified = "";
                         }
 
-                        data.dateModification = now.getTime(),
-                        data.historic = '# MODIFICADO POR (1) ADMIN EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2) + modified + dataBefore.historic                 
+                        security(data,client,callback,() => {
+                            data.user = (typeof data.user !== 'undefined' ? data.user : 1)
+                            data.userName = (typeof data.userName !== 'undefined' ? data.userName : 'ADMIN')
+                            data.userUpdate = (typeof data.userUpdate !== 'undefined' ? data.userUpdate : 1)
+                            data.userNameUpdate = (typeof data.userNameUpdate !== 'undefined' ? data.userNameUpdate : 'ADMIN')
+                            data.dateModification = now.getTime()
+                            data.historic = '# MODIFICADO POR (' + data.userUpdate + ') ' + data.userNameUpdate + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2) + modified + dataBefore.historic                 
 
-                        db.updateOne({_id:data._id},{$set:data},null,(error,result) => {
-                            if(error){
-                                console.log('> error: ' + error)
-                                client.close()
-                                callback({error})
-                            }else{
-                                error = false
-                                console.log('> [mongodb]: updated successfully')
-                                client.close()
-                                callback({error,data:[data]})
+                            if(withoutToken === undefined){
+                                delete data.token
+                                delete data.access
                             }
-                        })
+
+                            db.updateOne({_id:data._id},{$set:data},null,(error,result) => {
+                                if(error){
+                                    console.log('> error: ' + error)
+                                    client.close()
+                                    callback({error})
+                                }else{
+                                    error = false
+                                    console.log('> [mongodb]: updated successfully')
+                                    client.close()
+                                    callback({error,data:[data]})
+                                }
+                            })
+                        },withoutToken)
                     }
                 })
             }

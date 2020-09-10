@@ -1,7 +1,10 @@
-import { strlen, verifyVariable } from '../libs/functions'
+import { strlen, verifyVariable, sign } from '../libs/functions'
 import { openLoading,closeLoading } from '../components/loading'
 
-export async function api(host,token,data,callback) {
+export async function api(host,token,data,callback,signed) {
+    if(signed !== undefined){
+        data = sign(data)
+    }
     const res = await fetch(host,{
         method: 'post',
         body: JSON.stringify({
