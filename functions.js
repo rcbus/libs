@@ -1,3 +1,5 @@
+import { api,getHostApi,getTokenApi } from './api'
+
 export function clearNumber(number){
     if(verifyVariable(number)){
         number = number.toString()
@@ -127,6 +129,7 @@ export function formatDate(timestamp,mode){
 export function formatNumber(number,mode){
     if(mode === undefined){
         if(verifyVariable(number)){
+            number = number.toString()
             return number.replace(/\./g, ',')
         }else{
             return number
@@ -254,27 +257,52 @@ export function fromTo(map,data){
     return newData
 }
 
-export function getSession(key,pagename){
-    try{
-        if(typeof pagename === 'undefined'){
-            pagename = process.env.tokenApi
-        }
+export function getSession(key,pagename,backend,callback){
+    if(backend === undefined){
+        try{
+            if(typeof pagename === 'undefined'){
+                pagename = process.env.tokenApi
+            }
 
-        if(localStorage.getItem(pagename + "-" + key).length==0){
-            return false
-        }else{
-            const now = new Date()
-            const lifetime = localStorage.getItem("lifetime-" + pagename + "-" + key)    
-            if(lifetime>0 && lifetime<=now.getTime()){
-                localStorage.removeItem("lifetime-" + pagename + "-" + key)
-                localStorage.removeItem(pagename + "-" + key)
+            if(localStorage.getItem(pagename + "-" + key).length==0){
                 return false
             }else{
-                return JSON.parse(localStorage.getItem(pagename + "-" + key))
+                const now = new Date()
+                const lifetime = localStorage.getItem("lifetime-" + pagename + "-" + key)    
+                if(lifetime>0 && lifetime<=now.getTime()){
+                    localStorage.removeItem("lifetime-" + pagename + "-" + key)
+                    localStorage.removeItem(pagename + "-" + key)
+                    return false
+                }else{
+                    return JSON.parse(localStorage.getItem(pagename + "-" + key))
+                }
             }
+        }catch(e){
+            return false
         }
-    }catch(e){
-        return false
+    }else{
+        var userData = getSession('userData')
+        if(userData){
+            var data = {}
+            data.token = userData.token
+            data.access = userData.access
+            data.user = userData.user
+            data._type = 'get'
+            data.key = key
+            data.pagename = pagename
+            api(getHostApi() + 'api/storageBackend',getTokenApi(),data,(res) => {
+                if(res.error){
+                    console.log(res.error)
+                    callback(false)
+                }else if(count(res.data)==1){
+                    callback(res.data[0])
+                }else{
+                    callback(res.data)
+                }
+            })
+        }else{
+            callback(false)
+        }                
     }
 }
 
@@ -303,21 +331,47 @@ export function setCols(c1,c2,c3,c4,c5,mb){
     return cols;
 }
 
-export function setSession(key,data,pagename,lifetime){
-    try{
-        if(typeof pagename === 'undefined'){
-            pagename = process.env.tokenApi
+export function setSession(key,data,pagename,lifetime,backend,callback){
+    if(backend === undefined){
+        try{
+            if(typeof pagename === 'undefined'){
+                pagename = process.env.tokenApi
+            }
+            if(typeof lifetime !== 'undefined'){
+                const now = new Date()
+                localStorage.setItem("lifetime-" + pagename + "-" + key,now.getTime() + lifetime)    
+            }else{
+                localStorage.setItem("lifetime-" + pagename + "-" + key,0)    
+            }
+            localStorage.setItem(pagename + "-" + key,JSON.stringify(data))
+            return true
+        }catch(e){
+            return false
         }
-        if(typeof lifetime !== 'undefined'){
-            const now = new Date()
-            localStorage.setItem("lifetime-" + pagename + "-" + key,now.getTime() + lifetime)    
+    }else{
+        var userData = getSession('userData')
+        if(userData){
+            var sessionData = data
+            var data = {}
+            data.token = userData.token
+            data.access = userData.access
+            data.user = userData.user
+            data._type = 'set'
+            data.key = key
+            data.data = sessionData
+            data.pagename = pagename
+            data.lifetime = lifetime
+            api(getHostApi() + 'api/storageBackend',getTokenApi(),data,(res) => {
+                if(res.error){
+                    console.log(res.error)
+                    callback(false)
+                }else{
+                    callback(true)
+                }
+            })
         }else{
-            localStorage.setItem("lifetime-" + pagename + "-" + key,0)    
-        }
-        localStorage.setItem(pagename + "-" + key,JSON.stringify(data))
-        return true
-    }catch(e){
-        return false
+            callback(false)
+        }               
     }
 }
 
@@ -331,12 +385,42 @@ export function setSubState(obj,update){
     return newObj
 }
 
+export function shuffle(string){
+    var a = string.split(""),
+        n = a.length;
+
+    for(var i = n - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = a[i];
+        a[i] = a[j];
+        a[j] = tmp;
+    }
+    return a.join("");
+}
+
 export function sign(obj){
-    obj.user = getSession("userData").user
-    obj.userName = getSession("userData").userName
-    obj.branch = getSession("userData").branch
-    obj.branchName = getSession("userData").branchName
+    var userData = getSession("userData")
+    obj.access = userData.access
+    obj.user = (obj.user === undefined ? userData.user : obj.user)
+    obj.userUpdate = userData.user
+    obj.userName = (obj.userName === undefined ? userData.userName : obj.userName)
+    obj.userNameUpdate = userData.userName
+    obj.branch = (obj.branch === undefined ? userData.branch[userData.branchSelected]._id : obj.branch)
+    obj.branchName = (obj.branchName === undefined ? userData.branch[userData.branchSelected].name : obj.branchName)
+    obj.token = userData.token
     return obj
+}
+
+export function standardClear(data){
+    if(verifyVariable(data.cpfCnpj)){ data.cpfCnpj = clearNumber(data.cpfCnpj) }
+    if(verifyVariable(data.rgIe)){ data.rgIe = clearNumber(data.rgIe) }
+    if(verifyVariable(data.email)){ data.email = clearString(data.email,true,undefined,true,true) }
+    if(verifyVariable(data.cellphone)){ data.cellphone = clearNumber(data.cellphone) }
+    if(verifyVariable(data.phone1)){ data.phone1 = clearNumber(data.phone1) }
+    if(verifyVariable(data.phone2)){ data.phone2 = clearNumber(data.phone2) }
+    if(verifyVariable(data.skype)){ data.skype = clearString(data.skype) }
+
+    return data
 }
 
 export function strlen(string){
@@ -363,20 +447,49 @@ export function strupper(string){
     }
 }
 
-export function unSetSession(key,pagename){
-    try{
-        if(typeof pagename === 'undefined'){
-            pagename = 'app'
-        }
+export function ucFirst(string){
+    var firstLetter = string.slice(0,1)
+    return firstLetter.toUpperCase() + string.substring(1)
+}
 
-        if(localStorage.getItem(pagename + "-" + key).length==0){
+export function unSetSession(key,pagename,backend,callback){
+    if(backend=== undefined){
+        try{
+            if(typeof pagename === 'undefined'){
+                pagename = 'app'
+            }
+
+            if(localStorage.getItem(pagename + "-" + key).length==0){
+                return false
+            }else{
+                localStorage.removeItem("lifetime-" + pagename + "-" + key)
+                localStorage.removeItem(pagename + "-" + key)
+                return true
+            }
+        }catch(e){
             return false
-        }else{
-            localStorage.removeItem("lifetime-" + pagename + "-" + key)
-            localStorage.removeItem(pagename + "-" + key)
         }
-    }catch(e){
-        return false
+    }else{
+        var userData = getSession('userData')
+        if(userData){
+            var data = {}
+            data.token = userData.token
+            data.access = userData.access
+            data.user = userData.user
+            data._type = 'unSet'
+            data.key = key
+            data.pagename = pagename
+            api(getHostApi() + 'api/storageBackend',getTokenApi(),data,(res) => {
+                if(res.error){
+                    console.log(res.error)
+                    callback(false)
+                }else{
+                    callback(true)
+                }
+            })
+        }else{
+            callback(false)
+        }                
     }
 }
 
@@ -442,6 +555,18 @@ export function verifyCpfCnpj(cpfCnpj){
         }else{
             return false;
         }
+    }else{
+        return false
+    }
+}
+
+export function verifyGreater(variable){
+    if(variable === undefined){
+        return false
+    }else if(variable == null){
+        return false
+    }else if(variable>0){
+        return true
     }else{
         return false
     }
