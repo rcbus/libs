@@ -55,6 +55,8 @@ export function clearString(str,withoutSpace,withoutDot,withAtSign,withComma){
 export function count(obj){
     if(!verifyVariable(obj)){
         return 0
+    }else if(typeof obj === 'object'){
+        return Object.keys(obj).length
     }else{
         return obj.length
     }
@@ -126,10 +128,42 @@ export function formatDate(timestamp,mode){
     }
 }
 
-export function formatNumber(number,mode){
+export function formatNumber(number,precision,mode,resultInString) {
     if(mode === undefined){
         if(verifyVariable(number)){
             number = number.toString()
+            return number.replace(/\./g, ',')
+        }else{
+            return number
+        }
+    }else if(mode == 'usa'){
+        if(verifyVariable(number)){
+            if(strlen(number)==0){
+                number = 0
+            }
+            number = number.toString()
+            number = number.replace(/,/g, '.')
+            if(verifyVariable(precision)){
+                number = parseFloat(number).toFixed(precision)
+            }
+            if(verifyVariable(resultInString)){
+                return number
+            }else{
+                return number * 1
+            }
+        }else{
+            return number
+        }
+    }else if(mode == 'bra'){
+        if(verifyVariable(number)){
+            if(strlen(number)==0){
+                number = 0
+            }
+            number = number.toString()
+            number = number.replace(/,/g, '.')
+            if(verifyVariable(precision)){
+                number = parseFloat(number).toFixed(precision)
+            }
             return number.replace(/\./g, ',')
         }else{
             return number
@@ -564,6 +598,8 @@ export function verifyGreater(variable){
     if(variable === undefined){
         return false
     }else if(variable == null){
+        return false
+    }else if(strlen(variable)==0){
         return false
     }else if(variable>0){
         return true

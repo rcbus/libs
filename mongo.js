@@ -291,7 +291,7 @@ export async function insArray(collection,data,callback){
                         v.user = (typeof v.user !== 'undefined' ? v.user : 1)
                         v.userName = (typeof v.userName !== 'undefined' ? ("(" + v.user + ") " + v.userName) : '(1) ADMIN')
                         v.userUpdate = (typeof v.userUpdate !== 'undefined' ? v.userUpdate : 1)
-                        v.userNameUpdate = (typeof v.userNameUpdate !== 'undefined' ? ("(" + v.userUpdate + ") " + v.userName) : '(1) ADMIN')
+                        v.userNameUpdate = (typeof v.userNameUpdate !== 'undefined' ? ("(" + v.userUpdate + ") " + v.userNameUpdate) : '(1) ADMIN')
                         v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
                         v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
                         v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
@@ -375,8 +375,15 @@ export function search(search,config){
 }
 
 export async function security(data,client,callback,callbackSecurity,withoutToken){
-    var token = data.token
-    var user = data.userUpdate
+    var token = undefined
+    var user = undefined
+    if(Array.isArray(data)){
+        token = data[0].token
+        user = data[0].userUpdate
+    }else{
+        token = data.token
+        user = data.userUpdate
+    }
     if(process.env.security===true && withoutToken === undefined){
         if(token === undefined){
             var error = 'Falha de segurança(1)!'
