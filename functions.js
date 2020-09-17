@@ -142,6 +142,10 @@ export function formatNumber(number,precision,mode,resultInString) {
                 number = 0
             }
             number = number.toString()
+            if(number=='NaN'){
+                number = 0
+            }
+            number = number.toString()
             number = number.replace(/,/g, '.')
             if(verifyVariable(precision)){
                 number = parseFloat(number).toFixed(precision)
@@ -157,6 +161,10 @@ export function formatNumber(number,precision,mode,resultInString) {
     }else if(mode == 'bra'){
         if(verifyVariable(number)){
             if(strlen(number)==0){
+                number = 0
+            }
+            number = number.toString()
+            if(number=='NaN'){
                 number = 0
             }
             number = number.toString()
