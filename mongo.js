@@ -281,24 +281,28 @@ export async function insArray(collection,data,callback){
 
                 result.error = false
 
-                var startId = result.newId - (data.length - 1)
+                console.log(result.newId)
+                console.log(data.length)
 
+                var startId = result.newId - (data.length - 1)
+                console.log(startId)
                 security(data,client,callback,() => {
-                    data.map(v => {
-                        v._id = startId
-                        v.branch = (typeof v.branch !== 'undefined' ? v.branch : 1)
-                        v.branchName = (typeof v.branchName !== 'undefined' ? v.branchName : '')
-                        v.user = (typeof v.user !== 'undefined' ? v.user : 1)
-                        v.userName = (typeof v.userName !== 'undefined' ? ("(" + v.user + ") " + v.userName) : '(1) ADMIN')
-                        v.userUpdate = (typeof v.userUpdate !== 'undefined' ? v.userUpdate : 1)
-                        v.userNameUpdate = (typeof v.userNameUpdate !== 'undefined' ? ("(" + v.userUpdate + ") " + v.userNameUpdate) : '(1) ADMIN')
-                        v.date = (typeof v.date !== 'undefined' ? v.date : now.getTime()),
-                        v.dateModification = (typeof v.dateModification !== 'undefined' ? v.dateModification : now.getTime()),
-                        v.historic = (typeof v.historic !== 'undefined' ? v.historic : '# CRIADO POR ' + v.userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
-                        v.status = (strlen(v.status)>0 ? v.status : 1),
-                        delete v.token
-                        delete v.access
+                    data.map((v,k) => {
+                        data[k]._id = startId
+                        data[k].branch = (typeof data[k].branch !== 'undefined' ? data[k].branch : 1)
+                        data[k].branchName = (typeof data[k].branchName !== 'undefined' ? data[k].branchName : '')
+                        data[k].user = (typeof data[k].user !== 'undefined' ? data[k].user : 1)
+                        data[k].userName = (typeof data[k].userName !== 'undefined' ? ("(" + data[k].user + ") " + data[k].userName) : '(1) ADMIN')
+                        data[k].userUpdate = (typeof data[k].userUpdate !== 'undefined' ? data[k].userUpdate : 1)
+                        data[k].userNameUpdate = (typeof data[k].userNameUpdate !== 'undefined' ? ("(" + data[k].userUpdate + ") " + data[k].userNameUpdate) : '(1) ADMIN')
+                        data[k].date = (typeof data[k].date !== 'undefined' ? data[k].date : now.getTime()),
+                        data[k].dateModification = (typeof data[k].dateModification !== 'undefined' ? data[k].dateModification : now.getTime()),
+                        data[k].historic = (typeof data[k].historic !== 'undefined' ? data[k].historic : '# CRIADO POR ' + data[k].userName + ' EM ' + zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2))                 
+                        data[k].status = (strlen(data[k].status)>0 ? data[k].status : 1)
                         startId = startId + 1
+
+                        delete data[k].access
+                        delete data[k].token
                     })
 
                     db.insertMany(data,(error,result) => {
