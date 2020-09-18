@@ -8,7 +8,7 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex,count } from '../libs/functions'
+import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex,count,strupper } from '../libs/functions'
 import { result } from '../libs/api'
 
 export async function con(callback){
@@ -381,12 +381,15 @@ export function search(search,config){
 export async function security(data,client,callback,callbackSecurity,withoutToken){
     var token = undefined
     var user = undefined
+    var access = undefined
     if(Array.isArray(data)){
         token = data[0].token
         user = data[0].userUpdate
+        access = data[0].access
     }else{
         token = data.token
         user = data.userUpdate
+        access = data.access
     }
     if(process.env.security===true && withoutToken === undefined){
         if(token === undefined){
@@ -395,21 +398,25 @@ export async function security(data,client,callback,callbackSecurity,withoutToke
             client.close()
             callback({error:(error + '<br>Fale com o administrador do sistema.')})
         }else{
-            await sel('cadastro_pessoa',{_id:user,token:token},{_id:true},(resultMongo) => {
-                if(resultMongo.error){
-                    var error = 'Falha de segurança(2)!'
-                    console.log('> error: ' + error)
-                    client.close()
-                    callback({error:(error + '<br>Fale com o administrador do sistema.')})
-                }else if(count(resultMongo.data)==0){
-                    var error = 'Falha de segurança(3)!'
-                    console.log('> error: ' + error)
-                    client.close()
-                    callback({error:(error + '<br>Fale com o administrador do sistema.')})
-                }else{
-                    callbackSecurity()
-                }
-            })
+            if(strupper(access)!='ADMIN'){
+                await sel('cadastro_pessoa',{_id:user,token:token},{_id:true},(resultMongo) => {
+                    if(resultMongo.error){
+                        var error = 'Falha de segurança(2)!'
+                        console.log('> error: ' + error)
+                        client.close()
+                        callback({error:(error + '<br>Fale com o administrador do sistema.')})
+                    }else if(count(resultMongo.data)==0){
+                        var error = 'Falha de segurança(3)!'
+                        console.log('> error: ' + error)
+                        client.close()
+                        callback({error:(error + '<br>Fale com o administrador do sistema.')})
+                    }else{
+                        callbackSecurity()
+                    }
+                })
+            }else{
+                callbackSecurity()
+            }
         }
     }else{
         callbackSecurity()
