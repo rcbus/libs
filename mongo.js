@@ -264,7 +264,7 @@ export async function ins(collection,data,callback,randomId,counters){
     },undefined,randomId)
 }
 
-export async function insArray(collection,data,callback){
+export async function insArray(collection,data,callback,withoutToken){
     if(Array.isArray(data)===false){
         result.client = false
         console.log('> error: data is not array')
@@ -281,11 +281,8 @@ export async function insArray(collection,data,callback){
 
                 result.error = false
 
-                console.log(result.newId)
-                console.log(data.length)
-
                 var startId = result.newId - (data.length - 1)
-                console.log(startId)
+                
                 security(data,client,callback,() => {
                     data.map((v,k) => {
                         data[k]._id = startId
@@ -317,7 +314,7 @@ export async function insArray(collection,data,callback){
                             callback({error,data:result})
                         }
                     })
-                })
+                },withoutToken)
             }
         },data.length)
     }
