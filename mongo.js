@@ -328,7 +328,15 @@ export function exeProcessing(processing,data){
                     if(p.callback !== undefined){
                         Object.keys(data).map(k => {
                             if(data[k][p.column] !== undefined){
-                                data[k][p.column] = p.callback(data[k][p.column])
+                                if(p.param2 === undefined){
+                                    data[k][p.column] = p.callback(data[k][p.column])
+                                }else if(p.param3 === undefined){
+                                    data[k][p.column] = p.callback(data[k][p.column],p.param2)
+                                }else if(p.param4 === undefined){
+                                    data[k][p.column] = p.callback(data[k][p.column],p.param2,p.param3)
+                                }else if(p.param5 === undefined){
+                                    data[k][p.column] = p.callback(data[k][p.column],p.param2,p.param3,p.param4)
+                                }
                             }
                         })
                     }

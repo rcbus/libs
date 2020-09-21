@@ -354,12 +354,48 @@ export function keyboardEvent(callback){
 
 export function setCols(c1,c2,c3,c4,c5,mb){
     var cols = "";
+    var zero = false
 
-    if(typeof c1 !== 'undefined') cols = cols + " col-" + c1
-    if(typeof c2 !== 'undefined') cols = cols + " col-sm-" + c2
-    if(typeof c3 !== 'undefined') cols = cols + " col-md-" + c3
-    if(typeof c4 !== 'undefined') cols = cols + " col-lg-" + c4
-    if(typeof c5 !== 'undefined') cols = cols + " col-xl-" + c5
+    if(typeof c1 !== 'undefined'){
+        if(c1>0){
+            cols = cols + " col-" + c1 + (zero===true ? " d-md-flex" : "")
+        }else{
+            zero = true
+            cols = cols + " d-xs-none"
+        }
+    }
+    if(typeof c2 !== 'undefined'){
+        if(c2>0){
+            cols = cols + " col-sm-" + c2 + (zero===true ? " d-md-flex" : "")
+        }else{
+            zero = true
+            cols = cols + " d-sm-none"
+        }
+    }
+    if(typeof c3 !== 'undefined'){
+        if(c3>0){
+            cols = cols + " col-md-" + c3 + (zero===true ? " d-md-flex" : "")
+        }else{
+            zero = true
+            cols = cols + " d-md-none"
+        }
+    }
+    if(typeof c4 !== 'undefined'){
+        if(c4>0){
+            cols = cols + " col-lg-" + c4 + (zero===true ? " d-md-flex" : "")
+        }else{
+            zero = true
+            cols = cols + " d-lg-none"
+        }
+    }
+    if(typeof c5 !== 'undefined'){
+        if(c5>0){
+            cols = cols + " col-xl-" + c5 + (zero===true ? " d-md-flex" : "")
+        }else{
+            zero = true
+            cols = cols + " d-xl-none"
+        }
+    }
     if(typeof mb !== 'undefined'){
         if(mb==1){
             cols = cols + " mb-2 mb-sm-0"
