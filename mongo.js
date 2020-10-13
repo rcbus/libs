@@ -8,7 +8,7 @@ db.createUser({user:"name",pwd:"senha123",roles:[{role:"readWrite",db:"dbName"}]
 */
 
 import { MongoClient } from 'mongodb'
-import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex,count,strupper } from '../libs/functions'
+import { zeroLeft,getSession,strlen,setSubState,diacriticSensitiveRegex,count,strupper,verifyVariable } from '../libs/functions'
 import { result } from '../libs/api'
 
 export async function con(callback){
@@ -327,15 +327,31 @@ export function exeProcessing(processing,data){
                 if(p.column !== undefined){
                     if(p.callback !== undefined){
                         Object.keys(data).map(k => {
-                            if(data[k][p.column] !== undefined){
+                            var gate = true
+                            if(verifyVariable(p.status)){
+                                gate = false
+                                if(data[k]['status'] == p.status){
+                                    gate = true
+                                }
+                            }
+
+                            var temp = false
+                            if(data[k][p.column] !== undefined && gate === true){
                                 if(p.param2 === undefined){
-                                    data[k][p.column] = p.callback(data[k][p.column])
+                                    temp = p.callback(data[k][p.column])
                                 }else if(p.param3 === undefined){
-                                    data[k][p.column] = p.callback(data[k][p.column],p.param2)
+                                    temp = p.callback(data[k][p.column],p.param2)
                                 }else if(p.param4 === undefined){
-                                    data[k][p.column] = p.callback(data[k][p.column],p.param2,p.param3)
+                                    temp = p.callback(data[k][p.column],p.param2,p.param3)
                                 }else if(p.param5 === undefined){
-                                    data[k][p.column] = p.callback(data[k][p.column],p.param2,p.param3,p.param4)
+                                    temp = p.callback(data[k][p.column],p.param2,p.param3,p.param4)
+                                }
+                                if(temp!==false){
+                                    if(p.sendTo === undefined){
+                                        data[k][p.column] = temp
+                                    }else{
+                                        data[k][p.sendTo] = temp
+                                    }
                                 }
                             }
                         })
