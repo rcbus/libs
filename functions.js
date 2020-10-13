@@ -119,10 +119,14 @@ export function formatCpfCnpj(cpfCnpj){
 
 export function formatDate(timestamp,mode){
     const now = new Date()
-    now.setTime(timestamp)
+    if(verifyGreater(timestamp)){
+        now.setTime(timestamp)
+    }
 
     if(mode=='date abb 1'){
         return zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear()
+    }else if(mode=='RFC'){
+        return now.getFullYear() + '-' + zeroLeft(now.getMonth()+1,2) + '-' + zeroLeft(now.getDate(),2)
     }else{
         return zeroLeft(now.getDate(),2) + '/' + zeroLeft(now.getMonth()+1,2) + '/' + now.getFullYear() + ' ' + zeroLeft(now.getHours(),2) + ':' + zeroLeft(now.getMinutes(),2) + ':' + zeroLeft(now.getSeconds(),2)
     }
@@ -156,7 +160,7 @@ export function formatNumber(number,precision,mode,resultInString) {
                 return number * 1
             }
         }else{
-            return number
+            return 0
         }
     }else if(mode == 'bra'){
         if(verifyVariable(number)){
